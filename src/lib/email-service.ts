@@ -9,9 +9,9 @@ const PRIMARY_RECIPIENT = process.env.NOTIFICATION_EMAIL || "info@elmiadmc.com";
 // Fallback recipient when Resend domain is in sandbox test mode
 const FALLBACK_TEST_RECIPIENT = "erdemirs@gmail.com";
 
-// Sender address: once domain is verified on Resend, can be set to e.g. "ELMIA DMC <noreply@elmiadmc.com>"
+// Sender address: verified domain on Resend
 const DEFAULT_SENDER =
-  process.env.NOTIFICATION_FROM || "ELMIA DMC Inbound <onboarding@resend.dev>";
+  process.env.NOTIFICATION_FROM || "ELMIA DMC Inbound <notifications@elmiadmc.com>";
 
 export interface SendEmailResult {
   success: boolean;
