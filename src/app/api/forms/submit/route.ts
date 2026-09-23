@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { addLead } from "@/lib/leads-storage";
 import { checkSpam } from "@/lib/anti-spam";
+import { sendLeadNotificationEmail } from "@/lib/email-service";
 
 export async function POST(req: NextRequest) {
   try {
@@ -108,6 +109,13 @@ export async function POST(req: NextRequest) {
       message: effectiveMessage,
       priority
     });
+
+    // Send instant luxury email notification to dispatch desk
+    try {
+      await sendLeadNotificationEmail(createdLead);
+    } catch (emailErr) {
+      console.error("[SubmitRoute] Email notification dispatch error:", emailErr);
+    }
 
     return NextResponse.json({
       success: true,
