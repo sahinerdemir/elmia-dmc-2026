@@ -244,3 +244,142 @@ export async function sendLeadNotificationEmail(
     return { success: false, error: errorStr };
   }
 }
+
+/**
+ * Sends a direct executive reply from info@elmiadmc.com to the client.
+ */
+export async function sendClientReplyEmail({
+  lead,
+  subject,
+  messageContent
+}: {
+  lead: Lead;
+  subject: string;
+  messageContent: string;
+}): Promise<SendEmailResult> {
+  if (!resend) {
+    console.warn("[EmailService] Resend API key is missing. Skipping client reply dispatch.");
+    return { success: false, error: "Resend API key not configured" };
+  }
+
+  const sender = "ELMIA DMC <info@elmiadmc.com>";
+  const recipient = lead.email;
+
+  // Convert newlines to HTML line breaks cleanly
+  const formattedBody = messageContent
+    .split("\n\n")
+    .map(
+      (paragraph) =>
+        `<p style="margin: 0 0 16px 0; line-height: 1.7; color: #1e293b;">${paragraph
+          .replace(/\n/g, "<br/>")
+          .trim()}</p>`
+    )
+    .join("");
+
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #0b0f17; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0b0f17; padding: 40px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);">
+          
+          <!-- Luxury Brand Header -->
+          <tr>
+            <td style="padding: 36px 40px 30px; background: linear-gradient(135deg, #182234 0%, #0a0d14 100%); border-bottom: 3px solid #c5a880; text-align: center;">
+              <span style="display: block; font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: #c5a880; font-weight: 700; margin-bottom: 8px;">
+                DESTINATION MANAGEMENT & VIP CONCIERGE
+              </span>
+              <h1 style="margin: 0; font-size: 26px; font-weight: 700; color: #ffffff; letter-spacing: 0.08em; text-transform: uppercase;">
+                ELMIA DMC
+              </h1>
+              <span style="display: block; font-size: 11px; letter-spacing: 0.15em; color: #94a3b8; margin-top: 6px;">
+                MIAMI • FLORIDA
+              </span>
+            </td>
+          </tr>
+
+          <!-- Message Body -->
+          <tr>
+            <td style="padding: 36px 40px; color: #334155; font-size: 15px; line-height: 1.7;">
+              <p style="margin: 0 0 20px 0; font-size: 16px; font-weight: 600; color: #0f172a;">
+                Dear ${lead.name},
+              </p>
+              
+              <div style="margin-bottom: 28px;">
+                ${formattedBody}
+              </div>
+
+              <!-- Divider -->
+              <div style="height: 1px; background-color: #e2e8f0; margin: 32px 0 24px;"></div>
+
+              <!-- Executive Signature Block -->
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="vertical-align: top;">
+                    <div style="font-weight: 700; color: #0f172a; font-size: 15px; margin-bottom: 3px;">
+                      ELMIA DMC Executive Desk
+                    </div>
+                    <div style="font-size: 13px; color: #64748b; margin-bottom: 10px;">
+                      Bespoke VIP Travel & Destination Management
+                    </div>
+                    <div style="font-size: 12px; color: #0f172a; line-height: 1.6;">
+                      ✉️ <a href="mailto:info@elmiadmc.com" style="color: #a48458; text-decoration: none; font-weight: 600;">info@elmiadmc.com</a>
+                      &nbsp;|&nbsp; 🌐 <a href="https://elmiadmc.com" style="color: #a48458; text-decoration: none; font-weight: 600;">elmiadmc.com</a>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 20px 40px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center;">
+              <p style="margin: 0; font-size: 11px; color: #94a3b8; line-height: 1.5;">
+                This communication is confidential and intended solely for the addressee. ELMIA DMC Miami, Florida.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: sender,
+      to: [recipient],
+      replyTo: "info@elmiadmc.com",
+      subject: subject,
+      html: html
+    });
+
+    if (error) {
+      console.error("[sendClientReplyEmail] Resend error:", error);
+      return { success: false, error: error.message };
+    }
+
+    console.log(`[sendClientReplyEmail] Reply successfully sent to ${recipient} (ID: ${data?.id})`);
+    return {
+      success: true,
+      messageId: data?.id,
+      deliveredTo: recipient
+    };
+  } catch (err: unknown) {
+    const errStr = err instanceof Error ? err.message : String(err);
+    console.error("[sendClientReplyEmail] Unexpected error:", errStr);
+    return { success: false, error: errStr };
+  }
+}

@@ -1,5 +1,60 @@
-import { Lead, LeadStatus } from "@/types/crm";
+import { Lead, LeadStatus, ClientMessage } from "@/types/crm";
 import { supabase, isSupabaseConfigured } from "./supabase";
+
+export const MSG_DELIMITER = "\n--- CLIENT COMMUNICATIONS ---\n";
+
+export interface ParsedNotes {
+  cleanNotes: string;
+  trashedMeta?: string;
+  messages: ClientMessage[];
+}
+
+export function parseLeadInternalNotes(rawNotes?: string | null): ParsedNotes {
+  if (!rawNotes) {
+    return { cleanNotes: "", messages: [] };
+  }
+
+  let text = rawNotes;
+  let trashedMeta: string | undefined;
+  const trashedMatch = text.match(/\[TRASHED:prev=([a-z]+)\]/);
+  if (trashedMatch) {
+    trashedMeta = trashedMatch[0];
+    text = text.replace(/\[TRASHED:prev=[a-z]+\]/, "").trim();
+  } else if (text.includes("[TRASHED]")) {
+    trashedMeta = "[TRASHED]";
+    text = text.replace("[TRASHED]", "").trim();
+  }
+
+  let messages: ClientMessage[] = [];
+  let cleanNotes = text;
+
+  if (text.includes(MSG_DELIMITER)) {
+    const parts = text.split(MSG_DELIMITER);
+    cleanNotes = parts[0].trim();
+    try {
+      messages = JSON.parse(parts[1].trim());
+    } catch (e) {
+      console.error("Failed to parse messages JSON from notes:", e);
+    }
+  }
+
+  return { cleanNotes, trashedMeta, messages };
+}
+
+export function formatLeadInternalNotes(
+  cleanNotes: string,
+  trashedMeta?: string,
+  messages?: ClientMessage[]
+): string {
+  let result = cleanNotes.trim();
+  if (trashedMeta) {
+    result = `${trashedMeta} ${result}`.trim();
+  }
+  if (messages && messages.length > 0) {
+    result = `${result}${MSG_DELIMITER}${JSON.stringify(messages)}`;
+  }
+  return result;
+}
 
 // Global singleton cache in memory across module reloads in Node/Next.js
 declare global {
@@ -113,15 +168,17 @@ interface SupabaseLeadRow {
 }
 
 function mapRowToLead(row: SupabaseLeadRow): Lead {
+  const { cleanNotes, trashedMeta, messages } = parseLeadInternalNotes(row.internal_notes);
+
   const isTrashed =
     row.status === "archived" ||
     row.status === "trashed" ||
-    Boolean(row.internal_notes && row.internal_notes.includes("[TRASHED]")) ||
+    Boolean(trashedMeta) ||
     (row as unknown as { is_trashed?: boolean }).is_trashed === true;
 
   let previousStatus: LeadStatus = "unread";
-  if (row.internal_notes) {
-    const match = row.internal_notes.match(/\[TRASHED:prev=([a-z]+)\]/);
+  if (trashedMeta) {
+    const match = trashedMeta.match(/\[TRASHED:prev=([a-z]+)\]/);
     if (match && match[1]) {
       previousStatus = match[1] as LeadStatus;
     }
@@ -141,7 +198,8 @@ function mapRowToLead(row: SupabaseLeadRow): Lead {
     dates: row.dates || undefined,
     topic: row.topic || undefined,
     message: row.message || undefined,
-    internalNotes: row.internal_notes || undefined,
+    internalNotes: cleanNotes || undefined,
+    messages,
     priority: row.priority || "normal",
     isTrashed,
     previousStatus
@@ -279,9 +337,19 @@ export async function updateLeadNotes(
 ): Promise<Lead | null> {
   if (isSupabaseConfigured() && supabase) {
     try {
+      // First fetch current internal_notes to preserve existing messages and trashedMeta
+      const { data: existingRow } = await supabase
+        .from("leads")
+        .select("internal_notes")
+        .eq("id", id)
+        .single();
+
+      const { trashedMeta, messages } = parseLeadInternalNotes(existingRow?.internal_notes);
+      const combinedNotes = formatLeadInternalNotes(internalNotes, trashedMeta, messages);
+
       const { data, error } = await supabase
         .from("leads")
-        .update({ internal_notes: internalNotes })
+        .update({ internal_notes: combinedNotes })
         .eq("id", id)
         .select()
         .single();
@@ -504,5 +572,129 @@ export async function deleteLeadPermanently(id: string): Promise<boolean> {
 
 // Keep deleteLead pointing to deleteLeadPermanently for backward compatibility
 export const deleteLead = deleteLeadPermanently;
+
+export async function getLeadById(id: string): Promise<Lead | null> {
+  if (isSupabaseConfigured() && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("leads")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (!error && data) {
+        return mapRowToLead(data as SupabaseLeadRow);
+      }
+    } catch (err) {
+      console.error("Supabase getLeadById error:", err);
+    }
+  }
+
+  const store = getStore();
+  return store.find((l) => l.id === id) || null;
+}
+
+export async function addClientMessage(
+  leadId: string,
+  messageData: {
+    subject: string;
+    content: string;
+    sender?: string;
+    recipient?: string;
+    status?: "sent" | "delivered" | "failed";
+    messageId?: string;
+  }
+): Promise<{ lead: Lead; message: ClientMessage } | null> {
+  const newMessage: ClientMessage = {
+    id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    sentAt: new Date().toISOString(),
+    sender: messageData.sender || "ELMIA DMC <info@elmiadmc.com>",
+    recipient: messageData.recipient || "",
+    subject: messageData.subject,
+    content: messageData.content,
+    status: messageData.status || "delivered",
+    messageId: messageData.messageId
+  };
+
+  if (isSupabaseConfigured() && supabase) {
+    try {
+      const { data: existingRow, error: fetchErr } = await supabase
+        .from("leads")
+        .select("*")
+        .eq("id", leadId)
+        .single();
+
+      if (fetchErr || !existingRow) {
+        console.error("Supabase addClientMessage fetch error:", fetchErr);
+        return null;
+      }
+
+      const row = existingRow as SupabaseLeadRow;
+      const { cleanNotes, trashedMeta, messages } = parseLeadInternalNotes(row.internal_notes);
+
+      if (!newMessage.recipient) {
+        newMessage.recipient = row.email;
+      }
+
+      const updatedMessages = [...messages, newMessage];
+      const combinedNotes = formatLeadInternalNotes(cleanNotes, trashedMeta, updatedMessages);
+
+      // Auto-update status to responded if currently unread or read
+      const newStatus =
+        row.status === "unread" || row.status === "read"
+          ? ("responded" as LeadStatus)
+          : row.status;
+
+      const { data: updatedRow, error: updateErr } = await supabase
+        .from("leads")
+        .update({
+          internal_notes: combinedNotes,
+          status: newStatus
+        })
+        .eq("id", leadId)
+        .select()
+        .single();
+
+      if (updateErr) {
+        console.error("Supabase addClientMessage update error:", updateErr);
+        return null;
+      }
+
+      return {
+        lead: mapRowToLead(updatedRow as SupabaseLeadRow),
+        message: newMessage
+      };
+    } catch (err) {
+      console.error("Supabase addClientMessage error:", err);
+    }
+  }
+
+  // Fallback to in-memory store
+  const store = getStore();
+  const index = store.findIndex((l) => l.id === leadId);
+  if (index === -1) return null;
+
+  if (!newMessage.recipient) {
+    newMessage.recipient = store[index].email;
+  }
+
+  const existingMessages = store[index].messages || [];
+  const updatedMessages = [...existingMessages, newMessage];
+  const newStatus =
+    store[index].status === "unread" || store[index].status === "read"
+      ? ("responded" as LeadStatus)
+      : store[index].status;
+
+  store[index] = {
+    ...store[index],
+    status: newStatus,
+    messages: updatedMessages
+  };
+
+  return {
+    lead: store[index],
+    message: newMessage
+  };
+}
 
 

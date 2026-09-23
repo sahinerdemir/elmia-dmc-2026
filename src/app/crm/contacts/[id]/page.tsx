@@ -23,6 +23,7 @@ import {
   RotateCcw
 } from "lucide-react";
 import { Lead, LeadStatus } from "@/types/crm";
+import ClientCommunicationPanel from "@/components/crm/ClientCommunicationPanel";
 
 export default function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -318,33 +319,11 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
             </div>
           </div>
 
-          {/* Email Communication Panel (Phase 2 Placeholder) */}
-          <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm p-5 sm:p-8">
-            <h3 className="text-base sm:text-lg font-bold text-[#1a3822] mb-4 flex items-center">
-              <Mail className="w-5 h-5 mr-2 text-[#285735]" /> Client Communication
-            </h3>
-            
-            <div className="bg-[#f4f7f4] rounded-2xl p-5 sm:p-6 text-center border border-[#e5ece5] mb-5">
-              <Sparkles className="w-7 h-7 text-[#285735] mx-auto mb-2" />
-              <h4 className="font-bold text-[#1a3822] text-sm mb-1">Email Integration (Phase 2)</h4>
-              <p className="text-xs text-gray-600 max-w-sm mx-auto">
-                Direct reply via info@elmiadmc.com and bi-directional thread history will be accessible right inside this view.
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <textarea 
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#285735] min-h-[100px] resize-y"
-                placeholder="Write a reply to the client (Coming soon)..."
-                disabled
-              ></textarea>
-              <div className="flex justify-end">
-                <button disabled className="w-full sm:w-auto px-5 py-2.5 bg-gray-200 text-gray-500 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center cursor-not-allowed">
-                  <Send className="w-4 h-4 mr-2" /> Send via info@elmiadmc.com
-                </button>
-              </div>
-            </div>
-          </div>
+          {/* Client Communication Panel */}
+          <ClientCommunicationPanel
+            lead={lead}
+            onLeadUpdated={(updated) => setLead(updated)}
+          />
           
         </div>
 

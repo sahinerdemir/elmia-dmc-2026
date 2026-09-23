@@ -2,6 +2,17 @@ export type LeadCategory = "proposal" | "contact";
 
 export type LeadStatus = "unread" | "read" | "responded" | "converted" | "archived" | "trashed";
 
+export interface ClientMessage {
+  id: string;
+  sentAt: string; // ISO string
+  sender: string; // e.g. "ELMIA DMC <info@elmiadmc.com>"
+  recipient: string; // client email
+  subject: string;
+  content: string;
+  status: "sent" | "delivered" | "failed";
+  messageId?: string;
+}
+
 export interface Lead {
   id: string;
   createdAt: string; // ISO string
@@ -22,6 +33,8 @@ export interface Lead {
   isTrashed?: boolean;
   trashedAt?: string;
   previousStatus?: LeadStatus;
+  // Outbound client communications
+  messages?: ClientMessage[];
 }
 
 export interface LeadFilterOptions {
