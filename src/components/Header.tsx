@@ -437,10 +437,10 @@ export default function Header() {
                     <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-[#285735] border-b border-gray-100 mb-1">
                       Priority Cities
                     </div>
-                    {["Miami", "New York", "Chicago", "Los Angeles", "Las Vegas", "Nationwide"].map((city) => (
+                    {["Miami", "New York", "Chicago", "Los Angeles", "Las Vegas"].map((city) => (
                       <Link
                         key={city}
-                        href={city === "Nationwide" ? "/events" : `/events?city=${encodeURIComponent(city)}`}
+                        href={`/events?city=${encodeURIComponent(city)}`}
                         className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-all text-[#444444] hover:bg-[#f4f7f4] hover:text-[#285735]"
                       >
                         <span className="truncate pr-2">{city}</span>
@@ -804,10 +804,10 @@ export default function Header() {
 
               {eventsOpen && (
                 <div className="px-3 pb-3 pt-1 border-t border-[#edf2ed] flex flex-col space-y-1">
-                  {["Miami", "New York", "Chicago", "Los Angeles", "Las Vegas", "Nationwide"].map((city) => (
+                  {["Miami", "New York", "Chicago", "Los Angeles", "Las Vegas"].map((city) => (
                     <Link
                       key={city}
-                      href={city === "Nationwide" ? "/events" : `/events?city=${encodeURIComponent(city)}`}
+                      href={`/events?city=${encodeURIComponent(city)}`}
                       onClick={() => setMobileMenuOpen(false)}
                       className="py-2 px-3 rounded-lg text-sm transition-colors flex items-center justify-between text-[#444444] hover:text-[#285735] hover:bg-[#f4f7f4]"
                     >
