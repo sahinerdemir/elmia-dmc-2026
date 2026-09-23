@@ -603,17 +603,24 @@ export async function addClientMessage(
     recipient?: string;
     status?: "sent" | "delivered" | "failed";
     messageId?: string;
+    direction?: "outbound" | "inbound";
   }
 ): Promise<{ lead: Lead; message: ClientMessage } | null> {
+  const direction = messageData.direction || "outbound";
   const newMessage: ClientMessage = {
     id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
     sentAt: new Date().toISOString(),
-    sender: messageData.sender || "ELMIA DMC <info@elmiadmc.com>",
+    sender:
+      messageData.sender ||
+      (direction === "inbound"
+        ? "Client"
+        : "ELMIA DMC <info@elmiadmc.com>"),
     recipient: messageData.recipient || "",
     subject: messageData.subject,
     content: messageData.content,
     status: messageData.status || "delivered",
-    messageId: messageData.messageId
+    messageId: messageData.messageId,
+    direction
   };
 
   if (isSupabaseConfigured() && supabase) {
@@ -633,17 +640,20 @@ export async function addClientMessage(
       const { cleanNotes, trashedMeta, messages } = parseLeadInternalNotes(row.internal_notes);
 
       if (!newMessage.recipient) {
-        newMessage.recipient = row.email;
+        newMessage.recipient = direction === "inbound" ? "info@elmiadmc.com" : row.email;
       }
 
       const updatedMessages = [...messages, newMessage];
       const combinedNotes = formatLeadInternalNotes(cleanNotes, trashedMeta, updatedMessages);
 
-      // Auto-update status to responded if currently unread or read
-      const newStatus =
-        row.status === "unread" || row.status === "read"
-          ? ("responded" as LeadStatus)
-          : row.status;
+      // If client replied (inbound), flag lead as unread to alert operations team
+      // If team replied (outbound), auto-advance unread/read to responded
+      let newStatus: LeadStatus = row.status;
+      if (direction === "inbound") {
+        newStatus = "unread";
+      } else if (row.status === "unread" || row.status === "read") {
+        newStatus = "responded";
+      }
 
       const { data: updatedRow, error: updateErr } = await supabase
         .from("leads")
@@ -675,15 +685,18 @@ export async function addClientMessage(
   if (index === -1) return null;
 
   if (!newMessage.recipient) {
-    newMessage.recipient = store[index].email;
+    newMessage.recipient = direction === "inbound" ? "info@elmiadmc.com" : store[index].email;
   }
 
   const existingMessages = store[index].messages || [];
   const updatedMessages = [...existingMessages, newMessage];
-  const newStatus =
-    store[index].status === "unread" || store[index].status === "read"
-      ? ("responded" as LeadStatus)
-      : store[index].status;
+
+  let newStatus: LeadStatus = store[index].status;
+  if (direction === "inbound") {
+    newStatus = "unread";
+  } else if (store[index].status === "unread" || store[index].status === "read") {
+    newStatus = "responded";
+  }
 
   store[index] = {
     ...store[index],
@@ -695,6 +708,48 @@ export async function addClientMessage(
     lead: store[index],
     message: newMessage
   };
+}
+
+/**
+ * Searches for a lead by ID or client email address (case-insensitive).
+ */
+export async function findLeadByEmailOrId(query: string): Promise<Lead | null> {
+  const clean = query.trim().toLowerCase();
+  if (!clean) return null;
+
+  if (isSupabaseConfigured() && supabase) {
+    try {
+      // First try direct ID match
+      const { data: byId } = await supabase
+        .from("leads")
+        .select("*")
+        .eq("id", clean)
+        .maybeSingle();
+
+      if (byId) return mapRowToLead(byId as SupabaseLeadRow);
+
+      // Then try email match
+      const { data: byEmail } = await supabase
+        .from("leads")
+        .select("*")
+        .ilike("email", clean)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (byEmail && byEmail.length > 0) {
+        return mapRowToLead(byEmail[0] as SupabaseLeadRow);
+      }
+    } catch (err) {
+      console.error("Supabase findLeadByEmailOrId error:", err);
+    }
+  }
+
+  const store = getStore();
+  return (
+    store.find((l) => l.id.toLowerCase() === clean) ||
+    store.find((l) => l.email.toLowerCase() === clean) ||
+    null
+  );
 }
 
 

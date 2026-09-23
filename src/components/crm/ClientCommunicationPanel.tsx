@@ -11,7 +11,9 @@ import {
   FileCheck,
   Plane,
   PhoneCall,
-  ChevronDown
+  ChevronDown,
+  User,
+  ShieldCheck
 } from "lucide-react";
 import { Lead, ClientMessage } from "@/types/crm";
 
@@ -193,41 +195,64 @@ Please let us know what time window works best for you today or tomorrow, or fee
           </div>
         ) : (
           <div className="space-y-4">
-            {messages.map((msg, idx) => (
-              <div
-                key={msg.id || idx}
-                className="bg-gray-50 hover:bg-[#f6f9f6] transition-colors rounded-2xl p-4 sm:p-5 border border-gray-200"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2.5">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-bold text-[#1a3822] text-xs sm:text-sm">
-                      {msg.subject}
-                    </span>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800">
-                      <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" /> Delivered
-                    </span>
+            {messages.map((msg, idx) => {
+              const isInbound = msg.direction === "inbound";
+              return (
+                <div
+                  key={msg.id || idx}
+                  className={`rounded-2xl p-4 sm:p-5 border transition-all ${
+                    isInbound
+                      ? "bg-[#fffdfa] border-[#e2d5c3] shadow-xs border-l-4 border-l-[#c5a880]"
+                      : "bg-gray-50 hover:bg-[#f6f9f6] border-gray-200"
+                  }`}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2.5">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-bold text-[#1a3822] text-xs sm:text-sm">
+                        {msg.subject}
+                      </span>
+                      {isInbound ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-200">
+                          <User className="w-3 h-3 mr-1 text-amber-700" /> Client Reply
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800">
+                          <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" /> Team Sent
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-gray-400 flex items-center">
+                      <Clock className="w-3 h-3 mr-1" />
+                      {new Date(msg.sentAt).toLocaleString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit"
+                      })}
+                    </div>
                   </div>
-                  <div className="text-[11px] text-gray-400 flex items-center">
-                    <Clock className="w-3 h-3 mr-1" />
-                    {new Date(msg.sentAt).toLocaleString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit"
-                    })}
+
+                  <div className="text-[11px] text-gray-500 mb-2 font-mono">
+                    {isInbound ? (
+                      <span className="text-[#a48458] font-semibold">Client ({msg.sender}) replied to dispatch</span>
+                    ) : (
+                      <span>From: {msg.sender} → To: {msg.recipient}</span>
+                    )}
+                  </div>
+
+                  <div
+                    className={`text-xs sm:text-sm leading-relaxed whitespace-pre-wrap p-3.5 rounded-xl border shadow-2xs ${
+                      isInbound
+                        ? "bg-white text-gray-800 border-[#efe6db]"
+                        : "bg-white text-gray-700 border-gray-100"
+                    }`}
+                  >
+                    {msg.content}
                   </div>
                 </div>
-
-                <div className="text-[11px] text-gray-500 mb-2 font-mono">
-                  From: {msg.sender} → To: {msg.recipient}
-                </div>
-
-                <div className="text-xs sm:text-sm text-gray-700 leading-relaxed whitespace-pre-wrap bg-white p-3.5 rounded-xl border border-gray-100 shadow-2xs">
-                  {msg.content}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

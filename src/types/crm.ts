@@ -5,12 +5,13 @@ export type LeadStatus = "unread" | "read" | "responded" | "converted" | "archiv
 export interface ClientMessage {
   id: string;
   sentAt: string; // ISO string
-  sender: string; // e.g. "ELMIA DMC <info@elmiadmc.com>"
-  recipient: string; // client email
+  sender: string; // e.g. "ELMIA DMC <info@elmiadmc.com>" or "Client <email>"
+  recipient: string; // client email or info@elmiadmc.com
   subject: string;
   content: string;
   status: "sent" | "delivered" | "failed";
   messageId?: string;
+  direction?: "outbound" | "inbound"; // "outbound" = team sent, "inbound" = client reply
 }
 
 export interface Lead {
