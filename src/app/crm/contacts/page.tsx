@@ -140,39 +140,40 @@ export default function ContactsPage() {
           {/* Mobile Card List View (Shown on screens < md) */}
           <div className="block md:hidden space-y-3">
             {filteredLeads.length > 0 ? filteredLeads.map((lead) => (
-              <Link 
+              <div 
                 key={lead.id}
-                href={`/crm/contacts/${lead.id}`}
-                className="block bg-white p-4 rounded-2xl border border-gray-100 shadow-sm active:bg-gray-50 transition-colors"
+                className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm transition-colors"
               >
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-gray-900 text-sm truncate">{lead.name}</h3>
-                    {lead.company && (
-                      <p className="text-xs text-gray-500 truncate flex items-center mt-0.5">
-                        <Building2 className="w-3 h-3 mr-1 shrink-0" />
-                        {lead.company}
-                      </p>
+                <Link href={`/crm/contacts/${lead.id}`} className="block">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-gray-900 text-sm truncate">{lead.name}</h3>
+                      {lead.company && (
+                        <p className="text-xs text-gray-500 truncate flex items-center mt-0.5">
+                          <Building2 className="w-3 h-3 mr-1 shrink-0" />
+                          {lead.company}
+                        </p>
+                      )}
+                    </div>
+                    <div className="shrink-0">
+                      {getStatusBadge(lead.status)}
+                    </div>
+                  </div>
+
+                  <div className="bg-[#f4f7f4]/70 p-2.5 rounded-xl text-xs text-gray-700 mb-2">
+                    <div className="font-medium text-[#1a3822] truncate">{lead.topic || lead.service || "General Inquiry"}</div>
+                    {lead.dates && (
+                      <div className="text-gray-500 mt-0.5 flex items-center text-[11px]">
+                        <Calendar className="w-3 h-3 mr-1 shrink-0" />
+                        {lead.dates}
+                      </div>
                     )}
                   </div>
-                  <div className="shrink-0">
-                    {getStatusBadge(lead.status)}
-                  </div>
-                </div>
-
-                <div className="bg-[#f4f7f4]/70 p-2.5 rounded-xl text-xs text-gray-700 mb-2">
-                  <div className="font-medium text-[#1a3822] truncate">{lead.service || "General Inquiry"}</div>
-                  {lead.dates && (
-                    <div className="text-gray-500 mt-0.5 flex items-center text-[11px]">
-                      <Calendar className="w-3 h-3 mr-1 shrink-0" />
-                      {lead.dates}
-                    </div>
-                  )}
-                </div>
+                </Link>
 
                 <div className="flex items-center justify-between text-[11px] text-gray-400 pt-2 border-t border-gray-100">
                   <span>{new Date(lead.createdAt).toLocaleDateString()}</span>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3">
                     <button
                       onClick={(e) => handleDeleteLead(lead.id, lead.name, e)}
                       title="Move to Trash"
@@ -180,12 +181,15 @@ export default function ContactsPage() {
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
-                    <span className="font-semibold text-[#285735] flex items-center">
+                    <Link
+                      href={`/crm/contacts/${lead.id}`}
+                      className="font-semibold text-[#285735] flex items-center"
+                    >
                       Review <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
-                    </span>
+                    </Link>
                   </div>
                 </div>
-              </Link>
+              </div>
             )) : (
               <div className="p-8 text-center text-gray-500 text-sm bg-white rounded-2xl border border-gray-100">
                 No contacts found.

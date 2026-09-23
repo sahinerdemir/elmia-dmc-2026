@@ -31,8 +31,12 @@ export default function TrashPage() {
       const res = await fetch("/api/crm/leads");
       const data = await res.json();
       if (data.leads) {
-        // Filter leads that are marked as trashed
-        setLeads(data.leads.filter((l: Lead) => l.isTrashed || l.status === "trashed"));
+        // Filter leads that are marked as trashed or archived
+        setLeads(
+          data.leads.filter(
+            (l: Lead) => l.isTrashed || l.status === "archived" || l.status === "trashed"
+          )
+        );
       }
     } catch (e) {
       console.error("Failed to fetch trashed leads", e);
