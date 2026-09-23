@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@theme {
+  --font-heading: 'Funnel Display', sans-serif;
+  --font-sans: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+@layer base {
+  :root {
+    --brand-green: #285735;
+    --brand-green-dark: #1b3d24;
+    --brand-green-light: #346f44;
+    --brand-green-mint: #eaf4ec;
+    --brand-green-border: #b8dfbf;
+    --brand-gold: #c5a880;
+    --brand-gold-accent: #d4af37;
+    --brand-text: #222222;
+    --brand-text-muted: #555555;
+    --brand-bg: #ffffff;
+    --brand-bg-alt: #f8faf8;
+    --brand-bg-card: #ffffff;
+    --brand-border: #e5e9e5;
+  }
+
+  body {
+    background-color: #ffffff;
+    color: #444444;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.5556;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  p, span, a, button, input, textarea, select, label, li {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6, .font-heading,
+  h1 a, h2 a, h3 a, h4 a, h5 a, h6 a,
+  h1 span, h2 span, h3 span, h4 span, h5 span, h6 span {
+    font-family: 'Funnel Display', sans-serif !important;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* Light Glassmorphism and Card Shadows */
+.light-glass-nav {
+  background-color: #ffffff;
+  box-shadow: 0px 10px 15px 0px rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.brand-card {
+  background: #ffffff;
+  border: 1px solid #e7ede7;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease;
+}
+
+.brand-card:hover {
+  border-color: #285735;
+  box-shadow: 0 8px 24px rgba(40, 87, 53, 0.08);
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 50s linear infinite;
+  will-change: transform;
+}
+
+.group:hover .animate-marquee {
+  animation-play-state: paused;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
