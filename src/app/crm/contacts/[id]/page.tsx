@@ -21,7 +21,9 @@ import {
   ChevronDown,
   Trash2,
   RotateCcw,
-  Archive
+  Archive,
+  Check,
+  AlertCircle
 } from "lucide-react";
 import { Lead, LeadStatus } from "@/types/crm";
 import ClientCommunicationPanel from "@/components/crm/ClientCommunicationPanel";
@@ -34,6 +36,7 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
   const [lead, setLead] = useState<Lead | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   
   // Note editing state
   const [note, setNote] = useState("");
@@ -52,13 +55,14 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
         method: "DELETE"
       });
       if (res.ok) {
+        window.dispatchEvent(new Event("crm_records_updated"));
         router.push("/crm/contacts");
       } else {
         alert("Failed to move contact inquiry to trash.");
         setIsDeleting(false);
       }
     } catch (err) {
-      console.error("Trash error:", err);
+      console.error(err);
       alert("Network error.");
       setIsDeleting(false);
     }
@@ -73,8 +77,9 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
         body: JSON.stringify({ id: lead.id, action: "restore" })
       });
       if (res.ok) {
-        setLead({ ...lead, isTrashed: false, status: lead.previousStatus || "unread" });
-        alert("Contact inquiry restored successfully.");
+        const data = await res.json();
+        setLead(data.lead);
+        window.dispatchEvent(new Event("crm_records_updated"));
       } else {
         alert("Failed to restore contact inquiry.");
       }
@@ -95,6 +100,7 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
         method: "DELETE"
       });
       if (res.ok) {
+        window.dispatchEvent(new Event("crm_records_updated"));
         router.push("/crm/trash");
       } else {
         alert("Failed to permanently delete contact inquiry.");
@@ -110,7 +116,7 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
   useEffect(() => {
     async function fetchLead() {
       try {
-        const res = await fetch("/api/crm/leads");
+        const res = await fetch("/api/crm/leads", { cache: "no-store" });
         const data = await res.json();
         if (data.leads) {
           const found = data.leads.find((l: Lead) => l.id === id);
@@ -126,6 +132,7 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
                 body: JSON.stringify({ id: found.id, status: "read" })
               });
               setLead({ ...found, status: "read" });
+              window.dispatchEvent(new Event("crm_records_updated"));
             }
           }
         }
@@ -138,11 +145,13 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
     fetchLead();
   }, [id]);
 
-  const handleUpdateStatus = async (newStatus: LeadStatus) => {
+  const handleUpdateStatus = async (newStatus: string) => {
     if (!lead) return;
     const prevStatus = lead.status;
-    setLead({ ...lead, status: newStatus });
+    const optimisticStatus = newStatus === "archived" ? "rejected" : (newStatus as LeadStatus);
+    setLead({ ...lead, status: optimisticStatus });
     setStatusSaved(false);
+    setIsUpdatingStatus(true);
     try {
       const res = await fetch("/api/crm/leads", {
         method: "PATCH",
@@ -151,6 +160,7 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
       });
       if (res.ok) {
         setStatusSaved(true);
+        window.dispatchEvent(new Event("crm_records_updated"));
         setTimeout(() => setStatusSaved(false), 3000);
       } else {
         setLead({ ...lead, status: prevStatus });
@@ -158,6 +168,8 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
     } catch (e) {
       console.error(e);
       setLead({ ...lead, status: prevStatus });
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
 
@@ -183,53 +195,72 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
     }
   };
 
+  const formatCleanPhone = (phoneStr?: string) => {
+    if (!phoneStr) return "";
+    return phoneStr.replace(/[^0-9]/g, "");
+  };
+
   if (isLoading) {
     return (
-      <div className="p-8 sm:p-12 flex justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#285735]"></div>
+      <div className="p-8 sm:p-12 flex items-center justify-center min-h-[50vh]">
+        <div className="flex flex-col items-center gap-3 text-gray-500">
+          <div className="w-8 h-8 border-2 border-[#285735] border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm">İletişim talebi yükleniyor...</p>
+        </div>
       </div>
     );
   }
 
   if (!lead) {
     return (
-      <div className="p-8 text-center">
-        <h2 className="text-xl font-bold text-gray-900">Contact Not Found</h2>
-        <Link href="/crm/contacts" className="text-[#285735] hover:underline mt-4 inline-block font-semibold">
-          Return to Contacts
+      <div className="p-8 max-w-4xl mx-auto text-center py-20">
+        <AlertCircle className="w-16 h-16 text-rose-500 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-gray-900 mb-2 font-heading">İletişim Talebi Bulunamadı</h2>
+        <p className="text-gray-500 mb-6 text-sm">İstenen iletişim kaydı silinmiş veya mevcut değil.</p>
+        <Link
+          href="/crm/contacts"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#285735] hover:bg-[#1f4429] text-white font-medium rounded-xl text-sm transition-colors shadow-sm"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          İletişim Listesine Dön
         </Link>
       </div>
     );
   }
 
+  const cleanPhone = formatCleanPhone(lead.phone);
+  const whatsappUrl = cleanPhone ? `https://wa.me/${cleanPhone.startsWith("1") ? cleanPhone : `1${cleanPhone}`}` : null;
+
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-4 sm:space-y-6">
-      {/* Top Back Nav & Actions */}
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+
+      {/* Top Back Nav & Delete Button */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <Link 
             href={lead.isTrashed || lead.status === "trashed" ? "/crm/trash" : "/crm/contacts"} 
             className="text-gray-600 hover:text-gray-900 active:scale-95 flex items-center text-sm font-semibold transition-all py-1.5"
           >
-            <ArrowLeft className="w-4 h-4 mr-1.5" /> {lead.isTrashed || lead.status === "trashed" ? "Back to Trash" : "Back to Contacts"}
+            <ArrowLeft className="w-4 h-4 mr-1.5" /> {lead.isTrashed || lead.status === "trashed" ? "Çöp Kutusuna Dön" : "İletişim Taleplerine Dön"}
           </Link>
           {(lead.status === "archived" || lead.status === "rejected") && !lead.isTrashed && (
             <Link
               href="/crm/contacts/archive"
               className="text-rose-600 hover:text-rose-800 active:scale-95 flex items-center text-sm font-semibold transition-all py-1.5 border-l border-gray-300 pl-3"
             >
-              <Archive className="w-3.5 h-3.5 mr-1" /> Back to Archive
+              <Archive className="w-3.5 h-3.5 mr-1" /> Arşive Git
             </Link>
           )}
         </div>
+
         {!(lead.isTrashed || lead.status === "trashed") && (
           <button
             onClick={handleMoveToTrash}
             disabled={isDeleting}
-            className="inline-flex items-center px-3.5 py-2 rounded-xl border border-red-200 bg-white text-red-600 hover:bg-red-50 hover:border-red-300 text-xs font-bold transition-all active:scale-95 disabled:opacity-50 shadow-sm"
+            className="inline-flex items-center px-3.5 py-2 rounded-xl border border-red-200 bg-white text-red-600 hover:bg-red-50 hover:border-red-300 text-xs font-bold transition-all active:scale-95 disabled:opacity-50 shadow-xs cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-            {isDeleting ? "Moving..." : "Move to Trash"}
+            {isDeleting ? "Taşınıyor..." : "Çöp Kutusuna Taşı"}
           </button>
         )}
       </div>
@@ -239,7 +270,7 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center space-x-3 text-amber-800 text-sm font-medium">
             <Trash2 className="w-5 h-5 text-amber-600 shrink-0" />
-            <span>This contact inquiry is currently in the <strong>Trash</strong> folder.</span>
+            <span>Bu iletişim talebi şu anda <strong>Çöp Kutusunda</strong> bulunuyor.</span>
           </div>
           <div className="flex items-center space-x-2 shrink-0">
             <button
@@ -247,7 +278,7 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
               className="inline-flex items-center px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-bold transition-all shadow-sm active:scale-95"
             >
               <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
-              Restore Contact
+              Talebi Geri Yükle
             </button>
             <button
               onClick={handleDeletePermanently}
@@ -255,82 +286,166 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
               className="inline-flex items-center px-3.5 py-1.5 rounded-xl border border-red-200 bg-white text-red-600 hover:bg-red-50 text-xs font-bold transition-all shadow-sm active:scale-95 disabled:opacity-50"
             >
               <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-              Delete Forever
+              Kalıcı Olarak Sil
             </button>
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
-        {/* Main Column: Client & Request Details */}
-        <div className="lg:col-span-2 space-y-5 sm:space-y-6">
-          
-          <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm p-5 sm:p-8">
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-6 border-b border-gray-100 pb-5">
-              <div>
-                <h1 className="text-xl sm:text-3xl font-bold text-[#1a3822] font-heading break-words">
+      {/* Main Header Card (Matching Drivers Detail Header) */}
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="flex items-start gap-4">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 text-blue-600 font-bold text-xl">
+              {lead.name?.charAt(0) || "C"}
+            </div>
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-2xl sm:text-3xl font-bold text-[#1a3822] font-heading">
                   {lead.name}
                 </h1>
-                <p className="text-gray-500 text-xs sm:text-sm mt-1 flex items-center">
-                  <Building2 className="w-3.5 h-3.5 mr-1.5 shrink-0" />
-                  {lead.company || "Individual Client"}
-                </p>
+                <span className="text-xs px-2.5 py-0.5 rounded-full font-mono bg-gray-100 text-gray-600 border border-gray-200">
+                  ID: {lead.id.slice(0, 12)}
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                  {lead.topic || "Genel İletişim"}
+                </span>
               </div>
-              <div className="text-left sm:text-right">
-                <div className="text-[10px] sm:text-xs text-gray-400 font-bold uppercase tracking-wider mb-0.5">Submitted</div>
-                <div className="text-xs sm:text-sm font-medium text-gray-700">{new Date(lead.createdAt).toLocaleString()}</div>
+              <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 pt-1">
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                  Gönderim: {new Date(lead.createdAt).toLocaleDateString("tr-TR", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                  })}
+                </span>
+                {lead.company && (
+                  <span className="flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5 text-gray-400" />
+                    Şirket: <strong className="text-gray-800">{lead.company}</strong>
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Status & Quick Action Buttons */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Status Selector */}
+            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl p-1.5">
+              <span className="text-xs text-gray-500 pl-2 pr-1 font-medium">Durum:</span>
+              <select
+                value={lead.status === "rejected" ? "archived" : lead.status}
+                onChange={(e) => handleUpdateStatus(e.target.value)}
+                disabled={isUpdatingStatus}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border outline-none cursor-pointer transition-colors ${
+                  lead.status === "unread"
+                    ? "bg-red-50 text-red-800 border-red-200"
+                    : lead.status === "read"
+                    ? "bg-blue-50 text-blue-800 border-blue-200"
+                    : lead.status === "responded"
+                    ? "bg-amber-50 text-amber-800 border-amber-200"
+                    : lead.status === "converted"
+                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                    : "bg-rose-50 text-rose-800 border-rose-200"
+                }`}
+              >
+                <option value="unread">⏳ Okunmadı</option>
+                <option value="read">🔍 Okundu (İnceleniyor)</option>
+                <option value="responded">✉️ Yanıtlandı</option>
+                <option value="converted">🏆 Çözüldü (Converted)</option>
+                <option value="archived">❌ Reddedildi (Arşiv)</option>
+              </select>
+              {statusSaved && (
+                <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium px-2">
+                  <Check className="w-3.5 h-3.5" /> Kaydedildi
+                </span>
+              )}
+            </div>
+
+            {/* Direct Communication Buttons */}
+            {lead.phone && (
+              <a
+                href={`tel:${lead.phone}`}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#285735] hover:bg-[#1f4429] text-white transition-all shadow-xs"
+              >
+                <Phone className="w-3.5 h-3.5" />
+                Ara
+              </a>
+            )}
+            {whatsappUrl && (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-xs"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                WhatsApp
+              </a>
+            )}
+            <a
+              href={`mailto:${lead.email}`}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-800 transition-all shadow-xs"
+            >
+              <Mail className="w-3.5 h-3.5" />
+              E-posta
+            </a>
+          </div>
+        </div>
+
+        {(lead.status === "archived" || lead.status === "rejected") && (
+          <div className="mt-4 text-[12px] text-rose-700 bg-rose-50 border border-rose-200 px-3.5 py-2 rounded-xl font-medium flex items-center justify-between">
+            <span>📦 Bu iletişim talebi Arşivdedir. Durumu değiştirdiğinizde aktif talepler listesine geri taşınacaktır.</span>
+            <Link href="/crm/contacts/archive" className="font-bold underline ml-2">Arşivi Görüntüle &rarr;</Link>
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
+        {/* Main Column: Contact Details & Message */}
+        <div className="lg:col-span-2 space-y-5 sm:space-y-6">
+          
+          <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm p-5 sm:p-8 space-y-6">
+            <h2 className="text-lg font-bold text-[#1a3822] font-heading border-b border-gray-100 pb-3 flex items-center gap-2">
+              <Users className="w-5 h-5 text-blue-600" /> Mesaj Detayları
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-gray-50/70 p-4 rounded-xl border border-gray-100">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 block mb-1">Konu Başlığı</span>
+                <span className="text-sm font-bold text-gray-900">{lead.topic || "Genel İletişim"}</span>
+              </div>
+
+              <div className="bg-gray-50/70 p-4 rounded-xl border border-gray-100">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 block mb-1">Şirket / Organizasyon</span>
+                <span className="text-sm font-bold text-gray-900">{lead.company || "Bireysel Başvuru"}</span>
+              </div>
+
+              <div className="bg-gray-50/70 p-4 rounded-xl border border-gray-100">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 block mb-1">E-posta Adresi</span>
+                <span className="text-sm font-bold text-gray-900">{lead.email}</span>
+              </div>
+
+              <div className="bg-gray-50/70 p-4 rounded-xl border border-gray-100">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 block mb-1">Telefon Numarası</span>
+                <span className="text-sm font-bold text-gray-900">{lead.phone || "Belirtilmedi"}</span>
               </div>
             </div>
 
-            {/* Quick Contact & Info Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6">
-              <div className="space-y-1 bg-gray-50/70 p-3.5 rounded-xl sm:bg-transparent sm:p-0">
-                <span className="text-[11px] font-bold uppercase text-gray-400 flex items-center">
-                  <Mail className="w-3.5 h-3.5 mr-1.5 text-gray-500 shrink-0" /> Email
-                </span>
-                <a href={`mailto:${lead.email}`} className="text-sm font-semibold text-[#285735] hover:underline break-all block">
-                  {lead.email}
-                </a>
-              </div>
-              <div className="space-y-1 bg-gray-50/70 p-3.5 rounded-xl sm:bg-transparent sm:p-0">
-                <span className="text-[11px] font-bold uppercase text-gray-400 flex items-center">
-                  <Phone className="w-3.5 h-3.5 mr-1.5 text-gray-500 shrink-0" /> Phone
-                </span>
-                <a href={`tel:${lead.phone}`} className="text-sm font-semibold text-gray-900 hover:underline block">
-                  {lead.phone || "Not provided"}
-                </a>
-              </div>
-              <div className="space-y-1 bg-gray-50/70 p-3.5 rounded-xl sm:bg-transparent sm:p-0">
-                <span className="text-[11px] font-bold uppercase text-gray-400 flex items-center">
-                  <Calendar className="w-3.5 h-3.5 mr-1.5 text-gray-500 shrink-0" /> Requested Dates
-                </span>
-                <div className="text-sm font-medium text-gray-900">{lead.dates || "Flexible / Not specified"}</div>
-              </div>
-              <div className="space-y-1 bg-gray-50/70 p-3.5 rounded-xl sm:bg-transparent sm:p-0">
-                <span className="text-[11px] font-bold uppercase text-gray-400 flex items-center">
-                  <Users className="w-3.5 h-3.5 mr-1.5 text-gray-500 shrink-0" /> Group Size
-                </span>
-                <div className="text-sm font-medium text-gray-900">{lead.groupSize || "Not specified"}</div>
-              </div>
-            </div>
-
-            {/* Request Message */}
-            <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100">
-              <span className="text-[11px] font-bold uppercase text-gray-400 mb-1.5 flex items-center">
-                <FileText className="w-3.5 h-3.5 mr-1.5 text-gray-500 shrink-0" /> Requested Service
-              </span>
-              <div className="text-base sm:text-lg font-bold text-[#1a3822] mb-4">{lead.service || "General Contact"}</div>
-              
-              <span className="text-[11px] font-bold uppercase text-gray-400 mb-1.5 flex items-center">
-                <MessageSquare className="w-3.5 h-3.5 mr-1.5 text-gray-500 shrink-0" /> Additional Notes from Client
-              </span>
-              <p className="text-xs sm:text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                {lead.message || "No additional message provided."}
+            {/* Message Box */}
+            <div className="bg-[#fcfdfc] border border-gray-200/80 rounded-2xl p-5">
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-400 block mb-2">İletilen Mesaj Metni</span>
+              <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">
+                {lead.message || "Mesaj içeriği girilmemiş."}
               </p>
             </div>
           </div>
 
-          {/* Client Communication Panel */}
+          {/* Client Communication Panel (Outbound email thread) */}
           <ClientCommunicationPanel
             lead={lead}
             onLeadUpdated={(updated) => setLead(updated)}
@@ -338,68 +453,39 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
           
         </div>
 
-        {/* Sidebar / Tools Column */}
+        {/* Sidebar / Internal Notes Column */}
         <div className="space-y-5 sm:space-y-6">
           
-          {/* Status Management */}
-          <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm p-5 sm:p-6 text-gray-900">
-            <h3 className="text-xs font-bold mb-3 uppercase tracking-wider text-gray-400">Lead Status</h3>
-            <div className="relative mb-2">
-              <select 
-                value={lead.status === "rejected" ? "archived" : lead.status}
-                onChange={(e) => handleUpdateStatus(e.target.value as LeadStatus)}
-                className="w-full pl-4 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#285735] appearance-none cursor-pointer"
-              >
-                <option value="unread">Unread</option>
-                <option value="read">Read (In Progress)</option>
-                <option value="responded">Responded</option>
-                <option value="converted">Converted (Won)</option>
-                <option value="archived">❌ Reddedildi (Arşiv)</option>
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                <ChevronDown className="w-4 h-4 text-gray-400" />
-              </div>
-            </div>
-            {(lead.status === "archived" || lead.status === "rejected") && (
-              <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 p-2 rounded-lg mb-2">
-                📦 Bu iletişim talebi şu anda Arşivde. Durumu değiştirdiğinizde otomatik olarak aktif talepler listesine taşınır.
-              </p>
-            )}
-            <p className={`text-[11px] font-medium h-4 transition-colors ${statusSaved ? "text-emerald-600" : "text-gray-400"}`}>
-              {statusSaved ? "✓ Status saved successfully." : "Select to save immediately."}
-            </p>
-          </div>
-
           {/* Internal Notes */}
           <div className="bg-[#111b13] rounded-2xl sm:rounded-3xl p-5 sm:p-6 text-white shadow-xl">
             <h3 className="text-base sm:text-lg font-bold mb-2 font-heading flex items-center">
-              <FileText className="w-5 h-5 mr-2 text-[#74b382]" /> Internal Notes
+              <FileText className="w-5 h-5 mr-2 text-[#74b382]" /> Operasyonel Notlar
             </h3>
             <p className="text-xs text-gray-400 mb-3">
-              Visible strictly to dispatch operations team.
+              Yalnızca şirket içi operasyon ekibi tarafından görüntülenebilir.
             </p>
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               className="w-full bg-[#0c1810] border border-white/10 rounded-xl p-3.5 text-xs sm:text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#74b382] min-h-[140px] sm:min-h-[180px] resize-y mb-3"
-              placeholder="Add operation notes, chauffeur assignments, pricing notes..."
+              placeholder="İletişim notları, takip hatırlatması veya görüşme detayları..."
             />
             <div className="flex items-center justify-between">
               <span className="text-xs text-[#74b382] font-medium h-4">
-                {noteSaved ? "Notes saved." : ""}
+                {noteSaved ? "Notlar kaydedildi." : ""}
               </span>
               <button
                 onClick={handleSaveNote}
                 disabled={isSavingNote}
-                className="px-4 py-2.5 bg-[#285735] hover:bg-[#346c43] active:scale-95 text-white rounded-xl text-xs font-bold transition-all flex items-center disabled:opacity-50"
+                className="px-4 py-2.5 bg-[#285735] hover:bg-[#346c43] active:scale-95 text-white rounded-xl text-xs font-bold transition-all flex items-center disabled:opacity-50 cursor-pointer"
               >
                 <Save className="w-3.5 h-3.5 mr-1.5" />
-                {isSavingNote ? "Saving..." : "Save Notes"}
+                {isSavingNote ? "Kaydediliyor..." : "Notları Kaydet"}
               </button>
             </div>
           </div>
+
         </div>
-        
       </div>
     </div>
   );

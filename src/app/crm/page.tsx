@@ -92,8 +92,19 @@ export default function CRMDashboard() {
   const pendingDrivers = activeDrivers.filter((d) => d.status === "pending" || !d.status).length;
   const totalActionNeeded = unreadLeads + pendingDrivers;
   
-  const recentLeads = [...activeLeads].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
-  const recentDrivers = [...activeDrivers].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
+  const recentProposals = activeLeads
+    .filter((l) => l.category === "proposal")
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5);
+
+  const recentContacts = activeLeads
+    .filter((l) => l.category === "contact")
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5);
+
+  const recentDrivers = [...activeDrivers]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5);
 
   const getDriverStatusBadge = (status: string) => {
     switch (status) {
@@ -104,6 +115,21 @@ export default function CRMDashboard() {
       case "pending":
       default:
         return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">Pending</span>;
+    }
+  };
+
+  const getLeadStatusBadge = (status: string) => {
+    switch (status) {
+      case "unread":
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-50 text-red-700 border border-red-200">Unread</span>;
+      case "read":
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200">Read</span>;
+      case "responded":
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">Responded</span>;
+      case "converted":
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">Converted</span>;
+      default:
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-50 text-gray-700 border border-gray-200">{status}</span>;
     }
   };
 
@@ -121,7 +147,8 @@ export default function CRMDashboard() {
               <div key={i} className="h-28 bg-gray-200 rounded-2xl" />
             ))}
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="h-64 bg-gray-200 rounded-2xl" />
             <div className="h-64 bg-gray-200 rounded-2xl" />
             <div className="h-64 bg-gray-200 rounded-2xl" />
           </div>
@@ -188,76 +215,128 @@ export default function CRMDashboard() {
             </div>
           </div>
 
-          {/* Two-Column Activity Feed */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left Column: Recent Proposals & Inquiries */}
+          {/* Three-Box Activity Feed (1. Proposals, 2. Contacts, 3. Drivers) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            {/* Box 1: Recent Proposals */}
             <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-              <div className="px-5 py-4 sm:px-6 sm:py-5 border-b border-gray-100 flex justify-between items-center">
+              <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                 <div className="flex items-center space-x-2">
-                  <FileText className="w-5 h-5 text-[#285735]" />
-                  <h2 className="text-base sm:text-lg font-bold text-[#1a3822]">Recent Inquiries</h2>
+                  <FileText className="w-4 h-4 text-[#285735]" />
+                  <h2 className="text-sm sm:text-base font-bold text-[#1a3822]">Recent Proposals</h2>
                 </div>
-                <Link href="/crm/proposals" className="text-xs sm:text-sm font-semibold text-[#285735] hover:underline flex items-center">
-                  View All <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                <Link href="/crm/proposals" className="text-xs font-semibold text-[#285735] hover:underline flex items-center">
+                  View All <ArrowRight className="w-3 h-3 ml-1" />
                 </Link>
               </div>
               
               <div className="divide-y divide-gray-50 flex-1">
-                {recentLeads.length > 0 ? recentLeads.map((lead) => (
+                {recentProposals.length > 0 ? recentProposals.map((lead) => (
                   <Link
                     key={lead.id}
-                    href={`/crm/${lead.category === "proposal" ? "proposals" : "contacts"}/${lead.id}`}
+                    href={`/crm/proposals/${lead.id}`}
                     className="p-4 hover:bg-gray-50/80 active:bg-gray-100 transition-colors flex items-center justify-between gap-3 group"
                   >
                     <div className="flex items-center space-x-3 min-w-0">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                        lead.category === "proposal" ? "bg-[#eaf4ec] text-[#285735]" : "bg-blue-50 text-blue-600"
-                      }`}>
-                        {lead.category === "proposal" ? <FileText className="w-5 h-5" /> : <Users className="w-5 h-5" />}
+                      <div className="w-9 h-9 rounded-xl bg-[#eaf4ec] text-[#285735] flex items-center justify-center shrink-0 font-bold text-xs">
+                        {lead.name?.charAt(0) || "P"}
                       </div>
                       <div className="min-w-0">
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-1.5">
                           <h4 className="text-sm font-bold text-gray-900 truncate group-hover:text-[#285735] transition-colors">
                             {lead.name}
                           </h4>
-                          {lead.status === "unread" && (
-                            <span className="inline-block w-2 h-2 rounded-full bg-red-500 shrink-0" />
-                          )}
+                          {getLeadStatusBadge(lead.status)}
                         </div>
                         <p className="text-xs text-gray-500 truncate mt-0.5">
-                          {lead.company ? `${lead.company} • ` : ""}{new Date(lead.createdAt).toLocaleDateString()}
+                          {lead.service || lead.company || "Proposal Request"} • {new Date(lead.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
                     
-                    <div className="flex items-center space-x-2 shrink-0">
+                    <div className="flex items-center space-x-1.5 shrink-0">
                       <button
                         onClick={(e) => handleDeleteLead(lead.id, lead.name, e)}
                         title="Move to Trash"
                         className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                       <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-0.5 transition-transform" />
                     </div>
                   </Link>
                 )) : (
-                  <div className="p-8 text-center text-gray-500 text-sm">
-                    No recent inquiries found.
+                  <div className="p-8 text-center text-gray-500 text-xs">
+                    No proposals found.
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Right Column: Recent Driver Applications */}
+            {/* Box 2: Recent Contacts */}
             <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-              <div className="px-5 py-4 sm:px-6 sm:py-5 border-b border-gray-100 flex justify-between items-center">
+              <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                 <div className="flex items-center space-x-2">
-                  <Car className="w-5 h-5 text-amber-700" />
-                  <h2 className="text-base sm:text-lg font-bold text-[#1a3822]">Recent Driver Applications</h2>
+                  <Users className="w-4 h-4 text-blue-600" />
+                  <h2 className="text-sm sm:text-base font-bold text-[#1a3822]">Recent Contacts</h2>
                 </div>
-                <Link href="/crm/drivers" className="text-xs sm:text-sm font-semibold text-[#285735] hover:underline flex items-center">
-                  View All <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                <Link href="/crm/contacts" className="text-xs font-semibold text-[#285735] hover:underline flex items-center">
+                  View All <ArrowRight className="w-3 h-3 ml-1" />
+                </Link>
+              </div>
+              
+              <div className="divide-y divide-gray-50 flex-1">
+                {recentContacts.length > 0 ? recentContacts.map((lead) => (
+                  <Link
+                    key={lead.id}
+                    href={`/crm/contacts/${lead.id}`}
+                    className="p-4 hover:bg-gray-50/80 active:bg-gray-100 transition-colors flex items-center justify-between gap-3 group"
+                  >
+                    <div className="flex items-center space-x-3 min-w-0">
+                      <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 font-bold text-xs">
+                        {lead.name?.charAt(0) || "C"}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center space-x-1.5">
+                          <h4 className="text-sm font-bold text-gray-900 truncate group-hover:text-[#285735] transition-colors">
+                            {lead.name}
+                          </h4>
+                          {getLeadStatusBadge(lead.status)}
+                        </div>
+                        <p className="text-xs text-gray-500 truncate mt-0.5">
+                          {lead.topic || lead.company || "General Contact"} • {new Date(lead.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-1.5 shrink-0">
+                      <button
+                        onClick={(e) => handleDeleteLead(lead.id, lead.name, e)}
+                        title="Move to Trash"
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-0.5 transition-transform" />
+                    </div>
+                  </Link>
+                )) : (
+                  <div className="p-8 text-center text-gray-500 text-xs">
+                    No contact inquiries found.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Box 3: Recent Driver Applications */}
+            <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col md:col-span-2 lg:col-span-1">
+              <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <div className="flex items-center space-x-2">
+                  <Car className="w-4 h-4 text-amber-700" />
+                  <h2 className="text-sm sm:text-base font-bold text-[#1a3822]">Recent Driver Applications</h2>
+                </div>
+                <Link href="/crm/drivers" className="text-xs font-semibold text-[#285735] hover:underline flex items-center">
+                  View All <ArrowRight className="w-3 h-3 ml-1" />
                 </Link>
               </div>
               
@@ -271,24 +350,24 @@ export default function CRMDashboard() {
                       className="p-4 hover:bg-gray-50/80 active:bg-gray-100 transition-colors flex items-center justify-between gap-3 group"
                     >
                       <div className="flex items-center space-x-3 min-w-0">
-                        <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold text-sm shrink-0">
+                        <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold text-xs shrink-0">
                           {driver.firstName?.[0]?.toUpperCase() || "D"}{driver.lastName?.[0]?.toUpperCase() || ""}
                         </div>
                         <div className="min-w-0">
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center space-x-1.5">
                             <h4 className="text-sm font-bold text-gray-900 truncate group-hover:text-[#285735] transition-colors">
                               {driver.firstName} {driver.lastName}
                             </h4>
                             {getDriverStatusBadge(driver.status)}
                           </div>
                           <p className="text-xs text-gray-500 truncate mt-0.5">
-                            {years} yrs exp • DL State: {driver.licenseState || "US"} • {new Date(driver.createdAt).toLocaleDateString()}
+                            {years} yrs exp • DL: {driver.licenseState || "US"} • {new Date(driver.createdAt).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
                       
-                      <div className="flex items-center space-x-2 shrink-0">
-                        <span className="hidden sm:inline-block px-3 py-1 bg-gray-50 border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 group-hover:border-[#285735]/40 transition-colors">
+                      <div className="flex items-center space-x-1.5 shrink-0">
+                        <span className="hidden sm:inline-block px-2.5 py-1 bg-gray-50 border border-gray-200 rounded-lg text-[11px] font-semibold text-gray-700 group-hover:border-[#285735]/40 transition-colors">
                           Review
                         </span>
                         <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-0.5 transition-transform" />
@@ -296,7 +375,7 @@ export default function CRMDashboard() {
                     </Link>
                   );
                 }) : (
-                  <div className="p-8 text-center text-gray-500 text-sm flex flex-col items-center justify-center space-y-2">
+                  <div className="p-8 text-center text-gray-500 text-xs flex flex-col items-center justify-center space-y-2">
                     <p>No driver applications received yet.</p>
                     <Link href="/drivers" target="_blank" className="text-xs text-[#285735] font-semibold hover:underline">
                       View Public Application Form &rarr;
@@ -305,6 +384,7 @@ export default function CRMDashboard() {
                 )}
               </div>
             </div>
+
           </div>
         </>
       )}

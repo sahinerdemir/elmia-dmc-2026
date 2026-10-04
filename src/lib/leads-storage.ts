@@ -170,10 +170,10 @@ interface SupabaseLeadRow {
 function mapRowToLead(row: SupabaseLeadRow): Lead {
   const { cleanNotes, trashedMeta, messages } = parseLeadInternalNotes(row.internal_notes);
 
+  // A lead is only trashed if it explicitly has the [TRASHED] marker or status trashed
   const isTrashed =
-    row.status === "archived" ||
-    row.status === "trashed" ||
     Boolean(trashedMeta) ||
+    row.status === "trashed" ||
     (row as unknown as { is_trashed?: boolean }).is_trashed === true;
 
   let previousStatus: LeadStatus = "unread";
@@ -184,11 +184,14 @@ function mapRowToLead(row: SupabaseLeadRow): Lead {
     }
   }
 
+  // If DB status is "archived" (and not trashed), represent it as "rejected" in UI
+  const displayStatus: LeadStatus = row.status === "archived" ? "rejected" : row.status;
+
   return {
     id: row.id,
     createdAt: row.created_at,
     category: row.category,
-    status: row.status,
+    status: isTrashed ? "trashed" : displayStatus,
     name: row.name,
     email: row.email,
     phone: row.phone || "",
@@ -390,7 +393,7 @@ export async function trashLead(id: string): Promise<Lead | null> {
       if (getErr) {
         console.error("Supabase trashLead find error:", getErr);
       } else if (existing) {
-        const prevStatus = existing.status !== "archived" ? existing.status : "unread";
+        const prevStatus = existing.status;
         const currentNotes = existing.internal_notes || "";
         const updatedNotes = currentNotes.includes("[TRASHED]")
           ? currentNotes
@@ -399,7 +402,6 @@ export async function trashLead(id: string): Promise<Lead | null> {
         const { data, error } = await supabase
           .from("leads")
           .update({
-            status: "archived",
             internal_notes: updatedNotes
           })
           .eq("id", id)
@@ -424,13 +426,13 @@ export async function trashLead(id: string): Promise<Lead | null> {
 
   const current = store[index];
   const previousStatus: LeadStatus =
-    current.status !== "archived" && current.status !== "trashed"
+    current.status !== "trashed"
       ? current.status
       : (current.previousStatus || "unread");
 
   store[index] = {
     ...current,
-    status: "archived",
+    status: "trashed",
     isTrashed: true,
     previousStatus,
     trashedAt: new Date().toISOString()
@@ -451,7 +453,7 @@ export async function restoreLead(id: string): Promise<Lead | null> {
       if (getErr) {
         console.error("Supabase restoreLead find error:", getErr);
       } else if (existing) {
-        let restoredStatus: LeadStatus = "unread";
+        let restoredStatus: LeadStatus = existing.status === "archived" ? "archived" : existing.status;
         let cleanedNotes = existing.internal_notes || "";
         const match = cleanedNotes.match(/\[TRASHED:prev=([a-z]+)\]/);
         if (match && match[1]) {
@@ -461,10 +463,12 @@ export async function restoreLead(id: string): Promise<Lead | null> {
           cleanedNotes = cleanedNotes.replace("[TRASHED]", "").trim();
         }
 
+        const dbStatus = restoredStatus === "rejected" ? "archived" : restoredStatus;
+
         const { data, error } = await supabase
           .from("leads")
           .update({
-            status: restoredStatus,
+            status: dbStatus,
             internal_notes: cleanedNotes
           })
           .eq("id", id)
@@ -489,7 +493,7 @@ export async function restoreLead(id: string): Promise<Lead | null> {
 
   const current = store[index];
   const restoredStatus: LeadStatus =
-    current.previousStatus && current.previousStatus !== "archived" && current.previousStatus !== "trashed"
+    current.previousStatus && current.previousStatus !== "trashed"
       ? current.previousStatus
       : "unread";
 
@@ -507,24 +511,28 @@ export async function emptyTrash(): Promise<number> {
   let count = 0;
   if (isSupabaseConfigured() && supabase) {
     try {
-      const { data: trashedList, error: listErr } = await supabase
+      const { data: allLeads, error: listErr } = await supabase
         .from("leads")
-        .select("id")
-        .eq("status", "archived");
+        .select("id, internal_notes, status");
 
       if (listErr) {
         console.error("Supabase emptyTrash list error:", listErr);
-      } else if (trashedList && trashedList.length > 0) {
-        const ids = trashedList.map((r) => r.id);
-        const { error: delErr } = await supabase
-          .from("leads")
-          .delete()
-          .in("id", ids);
+      } else if (allLeads) {
+        const trashedIds = allLeads
+          .filter((r) => (r.internal_notes && r.internal_notes.includes("[TRASHED]")) || r.status === "trashed")
+          .map((r) => r.id);
 
-        if (delErr) {
-          console.error("Supabase emptyTrash delete error:", delErr);
-        } else {
-          count = ids.length;
+        if (trashedIds.length > 0) {
+          const { error: delErr } = await supabase
+            .from("leads")
+            .delete()
+            .in("id", trashedIds);
+
+          if (delErr) {
+            console.error("Supabase emptyTrash delete error:", delErr);
+          } else {
+            count = trashedIds.length;
+          }
         }
       }
     } catch (err) {
@@ -534,11 +542,11 @@ export async function emptyTrash(): Promise<number> {
 
   const store = getStore();
   const trashed = store.filter(
-    (l) => l.isTrashed || l.status === "archived" || l.status === "trashed"
+    (l) => l.isTrashed || l.status === "trashed"
   );
   count = Math.max(count, trashed.length);
   global.__ELMIA_LEADS_STORE = store.filter(
-    (l) => !l.isTrashed && l.status !== "archived" && l.status !== "trashed"
+    (l) => !l.isTrashed && l.status !== "trashed"
   );
 
   return count;

@@ -69,6 +69,7 @@ export default function CRMDriverListPage() {
         setDrivers((prev) =>
           prev.map((d) => (d.id === id ? { ...d, status: newStatus } : d))
         );
+        window.dispatchEvent(new Event("crm_records_updated"));
       } else {
         alert(data.error || "Durum güncellenemedi.");
       }
@@ -90,6 +91,7 @@ export default function CRMDriverListPage() {
       });
       if (res.ok) {
         setDrivers((prev) => prev.filter((d) => d.id !== id));
+        window.dispatchEvent(new Event("crm_records_updated"));
       } else {
         alert("Silme işlemi başarısız oldu.");
       }

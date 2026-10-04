@@ -63,6 +63,7 @@ export default function ContactsArchivePage() {
         body: JSON.stringify({ id, status: newStatus })
       });
       if (res.ok) {
+        window.dispatchEvent(new Event("crm_records_updated"));
         // If changed to a non-archived status, it leaves archive and goes back to active contacts!
         if (newStatus !== "rejected" && newStatus !== "archived") {
           setArchivedLeads((prev) => prev.filter((l) => l.id !== id));
@@ -93,6 +94,7 @@ export default function ContactsArchivePage() {
       const res = await fetch(`/api/crm/leads?id=${id}`, { method: "DELETE" });
       if (res.ok) {
         setArchivedLeads((prev) => prev.filter((l) => l.id !== id));
+        window.dispatchEvent(new Event("crm_records_updated"));
       } else {
         alert("Failed to move contact inquiry to trash.");
       }
@@ -222,7 +224,7 @@ export default function ContactsArchivePage() {
 
                     {/* Quick Restore Dropdown */}
                     <select
-                      value={lead.status === "rejected" ? "rejected" : "archived"}
+                      value="archived"
                       disabled={updatingId === lead.id}
                       onChange={(e) => handleStatusChange(lead.id, e.target.value as LeadStatus)}
                       className="text-xs font-semibold px-2 py-1 bg-white border border-rose-200 text-rose-700 rounded-lg cursor-pointer outline-none"
@@ -288,7 +290,7 @@ export default function ContactsArchivePage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-2">
                         <select
-                          value={lead.status === "rejected" ? "rejected" : "archived"}
+                          value="archived"
                           disabled={updatingId === lead.id}
                           onChange={(e) => handleStatusChange(lead.id, e.target.value as LeadStatus)}
                           className="text-xs font-semibold px-2.5 py-1.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-lg cursor-pointer outline-none transition-colors hover:border-rose-300"

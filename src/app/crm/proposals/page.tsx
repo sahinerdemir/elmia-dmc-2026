@@ -12,9 +12,13 @@ import {
   Building2, 
   Calendar,
   Trash2,
-  Archive
+  Archive,
+  RefreshCw,
+  Phone,
+  Mail,
+  Users
 } from "lucide-react";
-import { Lead } from "@/types/crm";
+import { Lead, LeadStatus } from "@/types/crm";
 
 export default function ProposalsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -22,6 +26,75 @@ export default function ProposalsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const fetchLeads = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/crm/leads", { cache: "no-store" });
+      const data = await res.json();
+      if (data.leads) {
+        const proposalLeads = data.leads.filter(
+          (l: Lead) => l.category === "proposal" && !l.isTrashed && l.status !== "trashed"
+        );
+        const active = proposalLeads.filter(
+          (l: Lead) => l.status !== "rejected" && l.status !== "archived"
+        );
+        const archived = proposalLeads.filter(
+          (l: Lead) => l.status === "rejected" || l.status === "archived"
+        );
+        setLeads(active);
+        setArchiveCount(archived.length);
+      }
+    } catch (e) {
+      console.error("Failed to fetch leads", e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLeads();
+
+    const handleFocus = () => fetchLeads();
+    const handleUpdate = () => fetchLeads();
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("crm_records_updated", handleUpdate);
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("crm_records_updated", handleUpdate);
+    };
+  }, []);
+
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    setUpdatingId(id);
+    try {
+      const res = await fetch("/api/crm/leads", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status: newStatus })
+      });
+      if (res.ok) {
+        if (newStatus === "archived" || newStatus === "rejected") {
+          // Move from active list to archive
+          setLeads((prev) => prev.filter((l) => l.id !== id));
+          setArchiveCount((prev) => prev + 1);
+        } else {
+          setLeads((prev) =>
+            prev.map((l) => (l.id === id ? { ...l, status: newStatus as LeadStatus } : l))
+          );
+        }
+        window.dispatchEvent(new Event("crm_records_updated"));
+      } else {
+        alert("Durum güncellenemedi.");
+      }
+    } catch (err) {
+      console.error("Status update error:", err);
+      alert("Ağ hatası.");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   const handleDeleteLead = async (id: string, name: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -33,6 +106,7 @@ export default function ProposalsPage() {
       const res = await fetch(`/api/crm/leads?id=${id}`, { method: "DELETE" });
       if (res.ok) {
         setLeads((prev) => prev.filter((l) => l.id !== id));
+        window.dispatchEvent(new Event("crm_records_updated"));
       } else {
         alert("Failed to move proposal to trash.");
       }
@@ -42,285 +116,323 @@ export default function ProposalsPage() {
     }
   };
 
-  const handleQuickReject = async (id: string, name: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!window.confirm(`"${name}" adlı teklifi Arşive (Reddedildi) taşımak istediğinize emin misiniz?`)) {
-      return;
-    }
-    try {
-      const res = await fetch("/api/crm/leads", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, status: "archived" })
-      });
-      if (res.ok) {
-        setLeads((prev) => prev.filter((l) => l.id !== id));
-        setArchiveCount((prev) => prev + 1);
-      } else {
-        alert("Teklif arşive taşınamadı.");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Ağ hatası.");
-    }
-  };
-
-  useEffect(() => {
-    async function fetchLeads() {
-      setIsLoading(true);
-      try {
-        const res = await fetch("/api/crm/leads");
-        const data = await res.json();
-        if (data.leads) {
-          const proposalLeads = data.leads.filter(
-            (l: Lead) => l.category === "proposal" && !l.isTrashed && l.status !== "trashed"
-          );
-          const active = proposalLeads.filter(
-            (l: Lead) => l.status !== "rejected" && l.status !== "archived"
-          );
-          const archived = proposalLeads.filter(
-            (l: Lead) => l.status === "rejected" || l.status === "archived"
-          );
-          setLeads(active);
-          setArchiveCount(archived.length);
-        }
-      } catch (e) {
-        console.error("Failed to fetch leads", e);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    fetchLeads();
-
-    const handleFocus = () => fetchLeads();
-    window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
-  }, []);
-
+  // Filtered active proposals
   const filteredLeads = useMemo(() => {
     return leads.filter((l) => {
-      const matchesSearch = 
-        l.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        (l.company && l.company.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (l.email && l.email.toLowerCase().includes(searchQuery.toLowerCase()));
-      const matchesStatus = statusFilter === "all" || l.status === statusFilter;
-      return matchesSearch && matchesStatus;
+      if (statusFilter !== "all" && l.status !== statusFilter) {
+        return false;
+      }
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        return (
+          l.name.toLowerCase().includes(q) ||
+          (l.company && l.company.toLowerCase().includes(q)) ||
+          (l.email && l.email.toLowerCase().includes(q)) ||
+          (l.phone && l.phone.toLowerCase().includes(q)) ||
+          (l.service && l.service.toLowerCase().includes(q)) ||
+          (l.message && l.message.toLowerCase().includes(q))
+        );
+      }
+      return true;
     }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [leads, searchQuery, statusFilter]);
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "unread":
-        return <span className="px-2.5 py-1 bg-red-100 text-red-700 rounded-md text-[11px] font-bold uppercase tracking-wider inline-flex items-center gap-1"><Clock className="w-3 h-3"/> Unread</span>;
-      case "read":
-        return <span className="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md text-[11px] font-bold uppercase tracking-wider inline-flex items-center gap-1"><Eye className="w-3 h-3"/> Read</span>;
-      case "responded":
-        return <span className="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-md text-[11px] font-bold uppercase tracking-wider inline-flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> Responded</span>;
-      case "converted":
-        return <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md text-[11px] font-bold uppercase tracking-wider inline-flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> Converted</span>;
-      default:
-        return <span className="px-2.5 py-1 bg-gray-100 text-gray-700 rounded-md text-[11px] font-bold uppercase tracking-wider">{status}</span>;
-    }
-  };
+  // Statistics
+  const stats = useMemo(() => {
+    return {
+      activeTotal: leads.length,
+      unread: leads.filter((l) => l.status === "unread").length,
+      read: leads.filter((l) => l.status === "read").length,
+      responded: leads.filter((l) => l.status === "responded" || l.status === "converted").length,
+      archived: archiveCount
+    };
+  }, [leads, archiveCount]);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#1a3822] font-heading flex items-center">
-              <FileText className="w-6 h-6 sm:w-8 sm:h-8 mr-2 sm:mr-3 text-[#285735]" />
-              Proposals
+      {/* Top Banner & Title */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-gray-200">
+        <div>
+          <div className="flex items-center space-x-2">
+            <span className="p-2 rounded-xl bg-[#285735]/10 text-[#285735]">
+              <FileText className="w-6 h-6" />
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#1a3822] tracking-tight font-heading">
+              Teklif Talepleri (Proposals)
             </h1>
-            <p className="text-xs sm:text-sm text-gray-600 mt-1">Manage all service and event proposal requests.</p>
           </div>
+          <p className="text-xs sm:text-sm text-gray-600 mt-1">
+            Web sitesi üzerinden gelen kurumsal ulaşım, tur ve VIP etkinlik teklif talepleri.
+          </p>
+        </div>
 
-          {/* Navigation Tabs between Active & Archive */}
+        {/* Action Buttons & Tabs */}
+        <div className="flex flex-wrap items-center gap-2.5">
           <div className="flex items-center space-x-2 bg-gray-100/80 p-1 rounded-xl">
             <Link
               href="/crm/proposals"
               className="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-[#285735] shadow-xs"
             >
-              Aktif Teklifler ({leads.length})
+              Aktif Teklifler ({stats.activeTotal})
             </Link>
             <Link
               href="/crm/proposals/archive"
               className="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-gray-600 hover:text-gray-900 transition-all flex items-center space-x-1.5"
             >
               <Archive className="w-3.5 h-3.5" />
-              <span>Arşiv ({archiveCount})</span>
+              <span>Arşiv ({stats.archived})</span>
             </Link>
           </div>
-        </div>
-        
-        {/* Search & Filter Bar (Mobile-friendly stacked or side-by-side) */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input 
-              type="text" 
-              placeholder="Search by name, company, email..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#285735]"
-            />
-          </div>
-          <div className="w-full sm:w-48">
-            <select 
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#285735] bg-white cursor-pointer"
-            >
-              <option value="all">Tüm Aktifler</option>
-              <option value="unread">Unread</option>
-              <option value="read">Read</option>
-              <option value="responded">Responded</option>
-              <option value="converted">Converted</option>
-            </select>
-          </div>
+
+          <button
+            onClick={fetchLeads}
+            className="p-2 bg-white hover:bg-gray-50 text-gray-600 rounded-xl text-xs transition-all border border-gray-200 cursor-pointer shadow-xs"
+            title="Listeyi Yenile"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-[#285735]" : ""}`} />
+          </button>
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="p-12 flex justify-center bg-white rounded-2xl sm:rounded-3xl border border-gray-100">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#285735]"></div>
+      {/* Summary KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
+        <div 
+          onClick={() => setStatusFilter("all")}
+          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+            statusFilter === "all" ? "bg-white border-[#285735] shadow-md ring-2 ring-[#285735]/10" : "bg-white border-gray-200 hover:border-gray-300 shadow-xs"
+          }`}
+        >
+          <div className="text-[11px] font-bold uppercase text-gray-400">Toplam Aktif</div>
+          <div className="text-2xl font-extrabold text-gray-900 mt-1">{stats.activeTotal}</div>
         </div>
-      ) : (
-        <>
-          {/* Mobile Card List View (Shown on screens < md) */}
-          <div className="block md:hidden space-y-3">
-            {filteredLeads.length > 0 ? filteredLeads.map((lead) => (
-              <div 
-                key={lead.id}
-                className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm transition-colors"
-              >
-                <Link href={`/crm/proposals/${lead.id}`} className="block">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="min-w-0">
-                      <h3 className="font-bold text-gray-900 text-sm truncate">{lead.name}</h3>
-                      {lead.company && (
-                        <p className="text-xs text-gray-500 truncate flex items-center mt-0.5">
-                          <Building2 className="w-3 h-3 mr-1 shrink-0" />
-                          {lead.company}
-                        </p>
-                      )}
-                    </div>
-                    <div className="shrink-0">
-                      {getStatusBadge(lead.status)}
-                    </div>
-                  </div>
 
-                  <div className="bg-[#f4f7f4]/70 p-2.5 rounded-xl text-xs text-gray-700 mb-2">
-                    <div className="font-medium text-[#1a3822] truncate">{lead.service || "General Inquiry"}</div>
-                    {lead.dates && (
-                      <div className="text-gray-500 mt-0.5 flex items-center text-[11px]">
-                        <Calendar className="w-3 h-3 mr-1 shrink-0" />
-                        {lead.dates}
-                      </div>
-                    )}
-                  </div>
-                </Link>
-
-                <div className="flex items-center justify-between text-[11px] text-gray-400 pt-2 border-t border-gray-100">
-                  <span>{new Date(lead.createdAt).toLocaleDateString()}</span>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={(e) => handleQuickReject(lead.id, lead.name, e)}
-                      title="Reddet / Arşive Taşı"
-                      className="p-1 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"
-                    >
-                      <Archive className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={(e) => handleDeleteLead(lead.id, lead.name, e)}
-                      title="Move to Trash"
-                      className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                    <Link
-                      href={`/crm/proposals/${lead.id}`}
-                      className="font-semibold text-[#285735] flex items-center"
-                    >
-                      Review <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            )) : (
-              <div className="p-8 text-center text-gray-500 text-sm bg-white rounded-2xl border border-gray-100">
-                No proposals found.
-              </div>
-            )}
+        <div 
+          onClick={() => setStatusFilter("unread")}
+          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+            statusFilter === "unread" ? "bg-white border-red-500 shadow-md ring-2 ring-red-500/10" : "bg-white border-gray-200 hover:border-gray-300 shadow-xs"
+          }`}
+        >
+          <div className="text-[11px] font-bold uppercase text-red-600 flex items-center">
+            <Clock className="w-3 h-3 mr-1" /> Bekleyenler
           </div>
+          <div className="text-2xl font-extrabold text-red-600 mt-1">{stats.unread}</div>
+        </div>
 
-          {/* Desktop Table View (Shown on md and up) */}
-          <div className="hidden md:block bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-            <table className="w-full text-left border-collapse">
+        <div 
+          onClick={() => setStatusFilter("read")}
+          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+            statusFilter === "read" ? "bg-white border-blue-500 shadow-md ring-2 ring-blue-500/10" : "bg-white border-gray-200 hover:border-gray-300 shadow-xs"
+          }`}
+        >
+          <div className="text-[11px] font-bold uppercase text-blue-600 flex items-center">
+            <Eye className="w-3 h-3 mr-1" /> İncelenenler
+          </div>
+          <div className="text-2xl font-extrabold text-blue-600 mt-1">{stats.read}</div>
+        </div>
+
+        <div 
+          onClick={() => setStatusFilter("responded")}
+          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+            statusFilter === "responded" ? "bg-white border-emerald-500 shadow-md ring-2 ring-emerald-500/10" : "bg-white border-gray-200 hover:border-gray-300 shadow-xs"
+          }`}
+        >
+          <div className="text-[11px] font-bold uppercase text-emerald-600 flex items-center">
+            <CheckCircle2 className="w-3 h-3 mr-1" /> Yanıtlananlar
+          </div>
+          <div className="text-2xl font-extrabold text-emerald-600 mt-1">{stats.responded}</div>
+        </div>
+
+        <Link 
+          href="/crm/proposals/archive"
+          className="p-4 rounded-2xl border transition-all bg-white border-rose-200 hover:border-rose-400 hover:shadow-md shadow-xs block group"
+        >
+          <div className="text-[11px] font-bold uppercase text-rose-600 flex items-center justify-between">
+            <span>Arşiv (Red)</span>
+            <ChevronRight className="w-3 h-3 text-rose-400 group-hover:translate-x-0.5 transition-transform" />
+          </div>
+          <div className="text-2xl font-extrabold text-rose-600 mt-1">{stats.archived}</div>
+        </Link>
+      </div>
+
+      {/* Filter and Search Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Müşteri adı, şirket, e-posta, telefon veya hizmet ile ara..."
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#285735] shadow-xs"
+          />
+        </div>
+
+        <div className="w-full sm:w-52">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#285735] bg-white cursor-pointer shadow-xs font-medium text-gray-700"
+          >
+            <option value="all">Tüm Aktifler</option>
+            <option value="unread">⏳ Okunmadı / Beklemede</option>
+            <option value="read">🔍 Okundu (İnceleniyor)</option>
+            <option value="responded">✉️ Yanıtlandı</option>
+            <option value="converted">🏆 Kazanıldı (Converted)</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Streamlined Clean Table Card */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        {isLoading ? (
+          <div className="py-20 text-center">
+            <div className="w-8 h-8 border-3 border-[#285735]/20 border-t-[#285735] rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-xs text-gray-500 font-medium">Teklif talepleri yükleniyor...</p>
+          </div>
+        ) : filteredLeads.length === 0 ? (
+          <div className="py-20 text-center px-4">
+            <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <h3 className="text-base font-bold text-gray-800">Teklif Talebi Bulunamadı</h3>
+            <p className="text-xs text-gray-500 max-w-sm mx-auto mt-1">
+              Arama kriterlerinize uyan teklif talebi bulunmuyor veya henüz kayıtlı talep yok.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Client</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Service Needed</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Submitted</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Action</th>
+                <tr className="bg-gray-50/75 border-b border-gray-200 text-gray-500 uppercase tracking-wider text-[11px] font-bold">
+                  <th className="py-4 px-5">Müşteri</th>
+                  <th className="py-4 px-5">Talep Edilen Hizmet</th>
+                  <th className="py-4 px-5">Grup &amp; Tarihler</th>
+                  <th className="py-4 px-5">Mesaj Özeti</th>
+                  <th className="py-4 px-5 text-right">Durum &amp; İşlem</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
-                {filteredLeads.length > 0 ? filteredLeads.map((lead) => (
-                  <tr key={lead.id} className="hover:bg-gray-50/50 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-gray-900">{lead.name}</div>
-                      <div className="text-xs text-gray-500 mt-0.5">{lead.company || lead.email}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-700">{lead.service || "General Inquiry"}</div>
-                      <div className="text-xs text-gray-500 mt-0.5">{lead.dates || "No dates specified"}</div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {new Date(lead.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4">
-                      {getStatusBadge(lead.status)}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="inline-flex items-center justify-end space-x-2">
-                        <Link 
-                          href={`/crm/proposals/${lead.id}`}
-                          className="inline-flex items-center justify-center px-3.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 hover:bg-[#285735] hover:text-white hover:border-[#285735] transition-all shadow-sm"
-                        >
-                          Open <ChevronRight className="w-3 h-3 ml-1" />
-                        </Link>
-                        <button
-                          onClick={(e) => handleQuickReject(lead.id, lead.name, e)}
-                          title="Reddet / Arşive Taşı"
-                          className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 border border-transparent hover:border-amber-200 rounded-lg transition-colors cursor-pointer"
-                        >
-                          <Archive className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => handleDeleteLead(lead.id, lead.name, e)}
-                          title="Move to Trash"
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-200 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )) : (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                      No proposals found matching your criteria.
-                    </td>
-                  </tr>
-                )}
+              <tbody className="divide-y divide-gray-100">
+                {filteredLeads.map((lead) => {
+                  return (
+                    <tr key={lead.id} className="hover:bg-gray-50/60 transition-colors">
+                      {/* 1. Client Info */}
+                      <td className="py-4 px-5">
+                        <div className="flex items-center space-x-3">
+                          <Link
+                            href={`/crm/proposals/${lead.id}`}
+                            className="w-10 h-10 rounded-full bg-[#285735]/10 text-[#285735] font-bold flex items-center justify-center shrink-0 hover:scale-105 transition-transform"
+                          >
+                            {lead.name?.charAt(0) || "P"}
+                          </Link>
+                          <div>
+                            <Link
+                              href={`/crm/proposals/${lead.id}`}
+                              className="font-bold text-gray-900 text-sm hover:text-[#285735] transition-colors block"
+                            >
+                              {lead.name}
+                            </Link>
+                            <div className="flex items-center gap-2 text-gray-500 text-[11px] mt-0.5">
+                              {lead.company && (
+                                <span className="flex items-center gap-1 font-medium text-gray-700">
+                                  <Building2 className="w-3 h-3 text-gray-400" />
+                                  {lead.company}
+                                </span>
+                              )}
+                              <span>•</span>
+                              <span>{lead.email}</span>
+                            </div>
+                            <div className="text-[10px] text-gray-400 mt-1">
+                              {new Date(lead.createdAt).toLocaleDateString("tr-TR", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit"
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* 2. Service */}
+                      <td className="py-4 px-5">
+                        <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#eaf4ec] text-[#285735] border border-[#285735]/20">
+                          {lead.service || "Genel Teklif"}
+                        </span>
+                        {lead.priority === "vip" && (
+                          <span className="ml-2 inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 uppercase tracking-wider">
+                            VIP
+                          </span>
+                        )}
+                      </td>
+
+                      {/* 3. Group & Dates */}
+                      <td className="py-4 px-5">
+                        <div className="text-gray-800 font-medium">
+                          {lead.groupSize ? `${lead.groupSize} Kişi` : "Grup belirtilmedi"}
+                        </div>
+                        <div className="text-gray-500 text-[11px] mt-1 flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-gray-400" />
+                          {lead.dates || "Tarih belirtilmedi"}
+                        </div>
+                      </td>
+
+                      {/* 4. Message Preview */}
+                      <td className="py-4 px-5 max-w-xs">
+                        <p className="text-gray-600 line-clamp-2 text-xs italic">
+                          &ldquo;{lead.message || "Mesaj detayı girilmedi."}&rdquo;
+                        </p>
+                      </td>
+
+                      {/* 5. Status & Actions */}
+                      <td className="py-4 px-5 text-right">
+                        <div className="flex items-center justify-end space-x-2">
+                          <select
+                            value={lead.status}
+                            disabled={updatingId === lead.id}
+                            onChange={(e) => handleStatusChange(lead.id, e.target.value)}
+                            className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold border cursor-pointer outline-none transition-colors ${
+                              lead.status === "unread"
+                                ? "bg-red-50 text-red-800 border-red-200"
+                                : lead.status === "read"
+                                ? "bg-blue-50 text-blue-800 border-blue-200"
+                                : lead.status === "responded"
+                                ? "bg-amber-50 text-amber-800 border-amber-200"
+                                : lead.status === "converted"
+                                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                : "bg-rose-50 text-rose-800 border-rose-200"
+                            }`}
+                          >
+                            <option value="unread">⏳ Okunmadı</option>
+                            <option value="read">🔍 Okundu</option>
+                            <option value="responded">✉️ Yanıtlandı</option>
+                            <option value="converted">🏆 Kazanıldı</option>
+                            <option value="archived">❌ Reddedildi (Arşiv)</option>
+                          </select>
+
+                          <Link
+                            href={`/crm/proposals/${lead.id}`}
+                            className="p-2 rounded-xl text-gray-500 hover:text-[#285735] hover:bg-gray-100 transition-colors"
+                            title="Detayları Görüntüle"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Link>
+
+                          <button
+                            onClick={(e) => handleDeleteLead(lead.id, lead.name, e)}
+                            className="p-2 rounded-xl text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                            title="Çöp Kutusuna Taşı"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }
