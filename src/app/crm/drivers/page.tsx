@@ -6,24 +6,18 @@ import Image from "next/image";
 import { 
   Car, 
   Search, 
-  Filter, 
   Download, 
   FileSpreadsheet, 
   Eye, 
   Trash2, 
-  CheckCircle2, 
-  Clock, 
-  AlertCircle, 
-  XCircle, 
   Phone, 
   Mail, 
-  MapPin, 
-  ShieldCheck, 
   Calendar, 
-  ExternalLink,
-  ChevronDown,
+  Clock, 
   RefreshCw,
-  Users
+  ExternalLink,
+  ShieldCheck,
+  FileBadge
 } from "lucide-react";
 import { DriverApplication, DriverStatus } from "@/types/driver";
 
@@ -34,7 +28,7 @@ export default function CRMDriverListPage() {
   const [statusFilter, setStatusFilter] = useState<DriverStatus | "all">("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  // Selected driver for license image preview modal
+  // Selected driver for document image preview modal
   const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
 
   const fetchDrivers = async () => {
@@ -81,7 +75,7 @@ export default function CRMDriverListPage() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!window.confirm(`"${name}" adlı şoförün başvurusunu silmek istediğinize emin misiniz?`)) {
+    if (!window.confirm(`"${name}" adlı şoförün başvurusunu kalıcı olarak silmek istediğinize emin misiniz?`)) {
       return;
     }
     try {
@@ -111,14 +105,12 @@ export default function CRMDriverListPage() {
         const q = searchQuery.toLowerCase();
         const fullName = `${d.firstName || ""} ${d.lastName || ""}`.toLowerCase();
         const phone = (d.phone || "").toLowerCase();
-        const origin = (d.origin || d.address || "").toLowerCase();
         const lic = (d.licenseNumber || "").toLowerCase();
         const email = (d.email || "").toLowerCase();
 
         return (
           fullName.includes(q) ||
           phone.includes(q) ||
-          origin.includes(q) ||
           lic.includes(q) ||
           email.includes(q)
         );
@@ -143,20 +135,20 @@ export default function CRMDriverListPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       {/* Top Banner & Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-gray-100">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-gray-200">
         <div>
           <div className="flex items-center space-x-2">
             <span className="p-2 rounded-xl bg-[#285735]/10 text-[#285735]">
               <Car className="w-6 h-6" />
             </span>
-            <h1 className="text-2xl font-bold text-[#1a3822] tracking-tight">
-              Şoför Başvuruları (Chauffeur Recruitment)
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#1a3822] tracking-tight font-heading">
+              Şoför Başvuruları
             </h1>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
-            Web sitesi (elmiadmc.com/drivers) üzerinden gelen tüm profesyonel şoför başvuruları ve belgeleri.
+          <p className="text-xs sm:text-sm text-gray-600 mt-1">
+            Web sitesi (elmiadmc.com/drivers) üzerinden gelen profesyonel şoför başvuruları.
           </p>
         </div>
 
@@ -164,7 +156,7 @@ export default function CRMDriverListPage() {
         <div className="flex items-center space-x-2.5">
           <button
             onClick={() => handleExportExcel("xls")}
-            className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-700/20 transition-all flex items-center space-x-2 cursor-pointer"
+            className="px-4 py-2.5 bg-[#285735] hover:bg-[#1f4429] text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center space-x-2 cursor-pointer"
             title="Tüm şoför listesini Excel (.xls) olarak indir"
           >
             <FileSpreadsheet className="w-4 h-4" />
@@ -173,7 +165,7 @@ export default function CRMDriverListPage() {
 
           <button
             onClick={() => handleExportExcel("csv")}
-            className="px-3.5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 cursor-pointer"
+            className="px-3.5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 cursor-pointer shadow-xs"
             title="CSV formatında indir"
           >
             <Download className="w-3.5 h-3.5" />
@@ -182,7 +174,7 @@ export default function CRMDriverListPage() {
 
           <button
             onClick={fetchDrivers}
-            className="p-2.5 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl text-xs transition-all border border-gray-200 cursor-pointer"
+            className="p-2.5 bg-white hover:bg-gray-50 text-gray-600 rounded-xl text-xs transition-all border border-gray-200 cursor-pointer shadow-xs"
             title="Listeyi Yenile"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin text-[#285735]" : ""}`} />
@@ -195,7 +187,7 @@ export default function CRMDriverListPage() {
         <div 
           onClick={() => setStatusFilter("all")}
           className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-            statusFilter === "all" ? "bg-white border-[#285735] shadow-md ring-2 ring-[#285735]/10" : "bg-white border-gray-100 hover:border-gray-200"
+            statusFilter === "all" ? "bg-white border-[#285735] shadow-md ring-2 ring-[#285735]/10" : "bg-white border-gray-200 hover:border-gray-300 shadow-xs"
           }`}
         >
           <div className="text-[11px] font-bold uppercase text-gray-400">Toplam Başvuru</div>
@@ -205,7 +197,7 @@ export default function CRMDriverListPage() {
         <div 
           onClick={() => setStatusFilter("pending")}
           className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-            statusFilter === "pending" ? "bg-white border-amber-500 shadow-md ring-2 ring-amber-500/10" : "bg-white border-gray-100 hover:border-gray-200"
+            statusFilter === "pending" ? "bg-white border-amber-500 shadow-md ring-2 ring-amber-500/10" : "bg-white border-gray-200 hover:border-gray-300 shadow-xs"
           }`}
         >
           <div className="text-[11px] font-bold uppercase text-amber-600 flex items-center">
@@ -217,84 +209,64 @@ export default function CRMDriverListPage() {
         <div 
           onClick={() => setStatusFilter("reviewed")}
           className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-            statusFilter === "reviewed" ? "bg-white border-blue-500 shadow-md ring-2 ring-blue-500/10" : "bg-white border-gray-100 hover:border-gray-200"
+            statusFilter === "reviewed" ? "bg-white border-blue-500 shadow-md ring-2 ring-blue-500/10" : "bg-white border-gray-200 hover:border-gray-300 shadow-xs"
           }`}
         >
-          <div className="text-[11px] font-bold uppercase text-blue-600 flex items-center">
-            <Eye className="w-3 h-3 mr-1" /> İncelenenler
-          </div>
+          <div className="text-[11px] font-bold uppercase text-blue-600">İncelenenler</div>
           <div className="text-2xl font-extrabold text-blue-600 mt-1">{stats.reviewed}</div>
         </div>
 
         <div 
           onClick={() => setStatusFilter("approved")}
           className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-            statusFilter === "approved" ? "bg-white border-emerald-600 shadow-md ring-2 ring-emerald-600/10" : "bg-white border-gray-100 hover:border-gray-200"
+            statusFilter === "approved" ? "bg-white border-emerald-500 shadow-md ring-2 ring-emerald-500/10" : "bg-white border-gray-200 hover:border-gray-300 shadow-xs"
           }`}
         >
-          <div className="text-[11px] font-bold uppercase text-emerald-600 flex items-center">
-            <CheckCircle2 className="w-3 h-3 mr-1" /> Onaylananlar
-          </div>
+          <div className="text-[11px] font-bold uppercase text-emerald-600">Onaylananlar</div>
           <div className="text-2xl font-extrabold text-emerald-600 mt-1">{stats.approved}</div>
         </div>
 
         <div 
           onClick={() => setStatusFilter("rejected")}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer col-span-2 sm:col-span-1 ${
-            statusFilter === "rejected" ? "bg-white border-red-500 shadow-md ring-2 ring-red-500/10" : "bg-white border-gray-100 hover:border-gray-200"
+          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+            statusFilter === "rejected" ? "bg-white border-rose-500 shadow-md ring-2 ring-rose-500/10" : "bg-white border-gray-200 hover:border-gray-300 shadow-xs"
           }`}
         >
-          <div className="text-[11px] font-bold uppercase text-red-500 flex items-center">
-            <XCircle className="w-3 h-3 mr-1" /> Reddedilenler
-          </div>
-          <div className="text-2xl font-extrabold text-red-500 mt-1">{stats.rejected}</div>
+          <div className="text-[11px] font-bold uppercase text-rose-600">Reddedilenler</div>
+          <div className="text-2xl font-extrabold text-rose-600 mt-1">{stats.rejected}</div>
         </div>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-2xs flex flex-col sm:flex-row gap-3 items-center justify-between">
-        {/* Search */}
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+      {/* Filter and Search Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="İsim, telefon, şehir, ehliyet no ara..."
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#285735]"
+            placeholder="İsim, telefon, e-posta veya ehliyet numarası ile ara..."
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#285735] shadow-xs"
           />
         </div>
 
-        {/* Status Filter Tabs */}
-        <div className="flex items-center space-x-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-          {(["all", "pending", "reviewed", "approved", "rejected"] as const).map((st) => {
-            const labels = {
-              all: "Tümü",
-              pending: "Bekleyen",
-              reviewed: "İncelenen",
-              approved: "Onaylanan",
-              rejected: "Reddedilen"
-            };
-            const active = statusFilter === st;
-            return (
-              <button
-                key={st}
-                onClick={() => setStatusFilter(st)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                  active
-                    ? "bg-[#285735] text-white shadow-2xs"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                {labels[st]}
-              </button>
-            );
-          })}
+        <div className="w-full sm:w-48">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as DriverStatus | "all")}
+            className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#285735] bg-white cursor-pointer shadow-xs"
+          >
+            <option value="all">Tüm Durumlar</option>
+            <option value="pending">⏳ Bekleyenler</option>
+            <option value="reviewed">🔍 İncelenenler</option>
+            <option value="approved">✅ Onaylananlar</option>
+            <option value="rejected">❌ Reddedilenler</option>
+          </select>
         </div>
       </div>
 
-      {/* Drivers Table & Cards */}
-      <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+      {/* Streamlined Clean Table Card */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
         {isLoading ? (
           <div className="py-20 text-center">
             <div className="w-8 h-8 border-3 border-[#285735]/20 border-t-[#285735] rounded-full animate-spin mx-auto mb-3" />
@@ -305,234 +277,231 @@ export default function CRMDriverListPage() {
             <Car className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <h3 className="text-base font-bold text-gray-800">Başvuru Bulunamadı</h3>
             <p className="text-xs text-gray-500 max-w-sm mx-auto mt-1">
-              Arama kriterlerinize uyan şoför başvurusu bulunmuyor veya henüz yeni bir başvuru yapılmadı.
+              Arama kriterlerinize uyan başvuru bulunmuyor veya henüz kayıtlı başvuru yok.
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-gray-50/75 border-b border-gray-100 text-gray-500 uppercase tracking-wider text-[10px] font-bold">
-                  <th className="py-3.5 px-4">Şoför &amp; Memleket</th>
-                  <th className="py-3.5 px-4">İletişim</th>
-                  <th className="py-3.5 px-4">Deneyim (ABD / Şoförlük)</th>
-                  <th className="py-3.5 px-4">Ehliyet &amp; Eyalet</th>
-                  <th className="py-3.5 px-4">Çocuk / SSN</th>
-                  <th className="py-3.5 px-4 text-center">Ehliyet Belgeleri</th>
-                  <th className="py-3.5 px-4">Tarih</th>
-                  <th className="py-3.5 px-4">Durum</th>
-                  <th className="py-3.5 px-4 text-right">İşlemler</th>
+                <tr className="bg-gray-50/75 border-b border-gray-200 text-gray-500 uppercase tracking-wider text-[11px] font-bold">
+                  <th className="py-4 px-5">Şoför</th>
+                  <th className="py-4 px-5">Ehliyet &amp; Eyalet</th>
+                  <th className="py-4 px-5">Deneyim &amp; Chauffeur Reg</th>
+                  <th className="py-4 px-5 text-center">Belgeler</th>
+                  <th className="py-4 px-5 text-right">Durum &amp; İşlem</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filteredDrivers.map((driver) => {
-                  const statusColors = {
-                    pending: "bg-amber-50 text-amber-800 border-amber-200",
-                    reviewed: "bg-blue-50 text-blue-800 border-blue-200",
-                    approved: "bg-emerald-50 text-emerald-800 border-emerald-200",
-                    rejected: "bg-red-50 text-red-800 border-red-200"
-                  };
-
                   return (
                     <tr key={driver.id} className="hover:bg-gray-50/60 transition-colors">
-                      {/* Name & Origin */}
-                      <td className="py-3.5 px-4">
-                        <Link
-                          href={`/crm/drivers/${driver.id}`}
-                          className="font-bold text-gray-900 hover:text-[#285735] flex items-center group"
-                        >
-                          <span className="w-8 h-8 rounded-full bg-[#285735]/10 text-[#285735] font-bold flex items-center justify-center mr-2.5 shrink-0 group-hover:scale-105 transition-transform">
-                            {driver.firstName.charAt(0)}{driver.lastName.charAt(0)}
-                          </span>
-                          <div>
-                            <div className="text-xs sm:text-sm font-bold group-hover:underline">
-                              {driver.firstName} {driver.lastName}
-                            </div>
-                            <div className="text-[11px] text-gray-400 font-normal flex items-center mt-0.5 truncate max-w-[180px]">
-                              <MapPin className="w-3 h-3 mr-1 text-gray-400 shrink-0" />
-                              <span className="truncate">{driver.address || driver.origin || "-"}</span>
-                            </div>
-                          </div>
-                        </Link>
-                      </td>
-
-                      {/* Contact */}
-                      <td className="py-3.5 px-4">
-                        <div className="space-y-1">
-                          <a
-                            href={`tel:${driver.phone}`}
-                            className="font-semibold text-gray-800 hover:text-[#285735] flex items-center"
+                      {/* 1. Driver Name & Contact */}
+                      <td className="py-4 px-5">
+                        <div className="flex items-center space-x-3">
+                          <Link
+                            href={`/crm/drivers/${driver.id}`}
+                            className="w-10 h-10 rounded-full bg-[#285735]/10 text-[#285735] font-bold flex items-center justify-center shrink-0 hover:scale-105 transition-transform"
                           >
-                            <Phone className="w-3 h-3 mr-1 text-[#285735]" />
-                            {driver.phone}
-                          </a>
-                          {driver.email && (
-                            <a
-                              href={`mailto:${driver.email}`}
-                              className="text-[11px] text-gray-400 hover:text-gray-600 truncate block max-w-[150px]"
+                            {driver.firstName?.charAt(0)}{driver.lastName?.charAt(0)}
+                          </Link>
+                          <div>
+                            <Link
+                              href={`/crm/drivers/${driver.id}`}
+                              className="font-bold text-gray-900 text-sm hover:text-[#285735] transition-colors"
                             >
-                              {driver.email}
-                            </a>
-                          )}
+                              {driver.firstName} {driver.lastName}
+                            </Link>
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
+                              <a
+                                href={`tel:${driver.phone}`}
+                                className="text-xs text-gray-600 hover:text-[#285735] font-semibold flex items-center gap-1"
+                              >
+                                <Phone className="w-3 h-3 text-[#285735]" />
+                                {driver.phone}
+                              </a>
+                              {driver.email && (
+                                <a
+                                  href={`mailto:${driver.email}`}
+                                  className="text-xs text-gray-400 hover:text-gray-700 truncate max-w-[170px]"
+                                  title={driver.email}
+                                >
+                                  {driver.email}
+                                </a>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-gray-400 block mt-0.5">
+                              {new Date(driver.createdAt).toLocaleDateString("tr-TR", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit"
+                              })}
+                            </span>
+                          </div>
                         </div>
                       </td>
 
-                      {/* Experience */}
-                      <td className="py-3.5 px-4">
-                        <div className="font-semibold text-gray-800">
-                          {driver.professionalDrivingYears || driver.drivingExperienceYears || "-"} Yıl Sürüş
-                        </div>
-                        <div className="text-[11px] text-gray-400">
-                          {driver.chauffeurExperienceYears ? `${driver.chauffeurExperienceYears} Yıl Chauffeur` : (driver.yearsInUS ? `${driver.yearsInUS} Yıl ABD` : "-")}
-                        </div>
-                      </td>
-
-                      {/* License */}
-                      <td className="py-3.5 px-4">
-                        <div className="font-mono text-gray-800 font-bold">
+                      {/* 2. License & State */}
+                      <td className="py-4 px-5">
+                        <div className="font-mono text-gray-900 font-bold text-xs tracking-wider">
                           {driver.licenseNumber}
                         </div>
-                        <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[10px] font-bold bg-gray-100 text-gray-600">
-                          {driver.licenseState || "FL"} {driver.licenseExpirationDate ? `• Exp: ${driver.licenseExpirationDate}` : ""}
-                        </span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#eaf4ec] text-[#285735] border border-[#285735]/20">
+                            {driver.licenseState || "FL"}
+                          </span>
+                          {driver.licenseExpirationDate && (
+                            <span className="text-[11px] text-gray-500">
+                              Bitiş: {driver.licenseExpirationDate}
+                            </span>
+                          )}
+                        </div>
                       </td>
 
-                      {/* Registration & Status */}
-                      <td className="py-3.5 px-4">
-                        <div className="space-y-1">
-                          {driver.hasChauffeurRegistration !== undefined ? (
-                            <span
-                              className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
-                                driver.hasChauffeurRegistration
-                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                  : "bg-gray-100 text-gray-500"
-                              }`}
-                            >
-                              {driver.hasChauffeurRegistration ? "Chauffeur Reg: Var" : "Chauffeur Reg: Yok"}
+                      {/* 3. Experience & Chauffeur Reg */}
+                      <td className="py-4 px-5">
+                        <div className="font-semibold text-gray-800">
+                          {driver.professionalDrivingYears || driver.drivingExperienceYears || "-"} Yıl Sürüş
+                          {driver.chauffeurExperienceYears && (
+                            <span className="text-gray-500 font-normal"> • {driver.chauffeurExperienceYears} Yıl Chauffeur</span>
+                          )}
+                        </div>
+                        <div className="mt-1">
+                          {driver.hasChauffeurRegistration ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <ShieldCheck className="w-3 h-3" /> Chauffeur Reg: Var
                             </span>
                           ) : (
-                            <span
-                              className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
-                                driver.hasChildren
-                                  ? "bg-purple-50 text-purple-700 border border-purple-200"
-                                  : "bg-gray-100 text-gray-500"
-                              }`}
-                            >
-                              {driver.hasChildren ? "Çocuklu" : "Çocuksuz"}
+                            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500">
+                              Chauffeur Reg: Yok
                             </span>
                           )}
+                        </div>
+                      </td>
 
-                          {driver.workedForLimoCompany !== undefined && (
-                            <div>
-                              <span
-                                className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
-                                  driver.workedForLimoCompany
-                                    ? "bg-blue-50 text-blue-700 border border-blue-200"
-                                    : "bg-gray-100 text-gray-500"
-                                }`}
-                              >
-                                {driver.workedForLimoCompany ? "Limo Deneyimli" : "Limo Yeni"}
-                              </span>
-                            </div>
+                      {/* 4. Document Thumbnails */}
+                      <td className="py-4 px-5 text-center">
+                        <div className="flex items-center justify-center space-x-2">
+                          {/* License Front */}
+                          {driver.licenseFrontUrl && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setPreviewImage({
+                                  url: driver.licenseFrontUrl,
+                                  title: `${driver.firstName} ${driver.lastName} — Ehliyet Ön Yüz`
+                                })
+                              }
+                              className="relative w-12 h-8 rounded-lg border border-gray-200 overflow-hidden hover:scale-105 transition-transform shadow-2xs group cursor-pointer bg-gray-100"
+                              title="Ehliyet Ön Yüzü Büyüt"
+                            >
+                              <Image
+                                src={driver.licenseFrontUrl}
+                                alt="Ön Yüz"
+                                fill
+                                className="object-cover"
+                                unoptimized
+                              />
+                              <div className="absolute inset-0 bg-black/35 group-hover:bg-transparent transition-colors flex items-center justify-center text-white text-[9px] font-bold">
+                                ÖN
+                              </div>
+                            </button>
+                          )}
+
+                          {/* License Back */}
+                          {driver.licenseBackUrl && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setPreviewImage({
+                                  url: driver.licenseBackUrl,
+                                  title: `${driver.firstName} ${driver.lastName} — Ehliyet Arka Yüz`
+                                })
+                              }
+                              className="relative w-12 h-8 rounded-lg border border-gray-200 overflow-hidden hover:scale-105 transition-transform shadow-2xs group cursor-pointer bg-gray-100"
+                              title="Ehliyet Arka Yüzü Büyüt"
+                            >
+                              <Image
+                                src={driver.licenseBackUrl}
+                                alt="Arka Yüz"
+                                fill
+                                className="object-cover"
+                                unoptimized
+                              />
+                              <div className="absolute inset-0 bg-black/35 group-hover:bg-transparent transition-colors flex items-center justify-center text-white text-[9px] font-bold">
+                                ARKA
+                              </div>
+                            </button>
+                          )}
+
+                          {/* Chauffeur Reg Photo (if uploaded) */}
+                          {driver.chauffeurRegistrationFrontUrl && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setPreviewImage({
+                                  url: driver.chauffeurRegistrationFrontUrl!,
+                                  title: `${driver.firstName} ${driver.lastName} — Chauffeur Registration Belgesi`
+                                })
+                              }
+                              className="relative w-12 h-8 rounded-lg border border-emerald-300 overflow-hidden hover:scale-105 transition-transform shadow-2xs group cursor-pointer bg-emerald-50"
+                              title="Chauffeur Registration Belgesi"
+                            >
+                              <Image
+                                src={driver.chauffeurRegistrationFrontUrl}
+                                alt="Reg Belgesi"
+                                fill
+                                className="object-cover"
+                                unoptimized
+                              />
+                              <div className="absolute inset-0 bg-black/35 group-hover:bg-transparent transition-colors flex items-center justify-center text-white text-[8px] font-bold">
+                                REG
+                              </div>
+                            </button>
                           )}
                         </div>
                       </td>
 
-                      {/* License Images Thumbnails */}
-                      <td className="py-3.5 px-4 text-center">
-                        <div className="flex items-center justify-center space-x-1.5">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setPreviewImage({
-                                url: driver.licenseFrontUrl,
-                                title: `${driver.firstName} ${driver.lastName} — Ehliyet Ön Yüz`
-                              })
-                            }
-                            className="relative w-11 h-7 rounded border border-gray-200 overflow-hidden hover:scale-105 transition-transform shadow-2xs group cursor-pointer"
-                            title="Ön Yüzü Görüntüle"
-                          >
-                            <Image
-                              src={driver.licenseFrontUrl}
-                              alt="Ön Yüz"
-                              fill
-                              className="object-cover"
-                            />
-                            <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-colors flex items-center justify-center text-white text-[8px] font-bold">
-                              ÖN
-                            </div>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setPreviewImage({
-                                url: driver.licenseBackUrl,
-                                title: `${driver.firstName} ${driver.lastName} — Ehliyet Arka Yüz`
-                              })
-                            }
-                            className="relative w-11 h-7 rounded border border-gray-200 overflow-hidden hover:scale-105 transition-transform shadow-2xs group cursor-pointer"
-                            title="Arka Yüzü Görüntüle"
-                          >
-                            <Image
-                              src={driver.licenseBackUrl}
-                              alt="Arka Yüz"
-                              fill
-                              className="object-cover"
-                            />
-                            <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-colors flex items-center justify-center text-white text-[8px] font-bold">
-                              ARKA
-                            </div>
-                          </button>
-                        </div>
-                      </td>
-
-                      {/* Date */}
-                      <td className="py-3.5 px-4 text-gray-500 whitespace-nowrap">
-                        {new Date(driver.createdAt).toLocaleDateString("tr-TR", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric"
-                        })}
-                      </td>
-
-                      {/* Status Dropdown */}
-                      <td className="py-3.5 px-4">
-                        <div className="relative">
+                      {/* 5. Status & Actions */}
+                      <td className="py-4 px-5 text-right">
+                        <div className="flex items-center justify-end space-x-2">
                           <select
-                            disabled={updatingId === driver.id}
                             value={driver.status}
+                            disabled={updatingId === driver.id}
                             onChange={(e) =>
                               handleStatusChange(driver.id, e.target.value as DriverStatus)
                             }
-                            className={`pl-2.5 pr-7 py-1 rounded-lg text-xs font-bold uppercase tracking-wider border appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#285735] ${
-                              statusColors[driver.status]
+                            className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold border cursor-pointer outline-none transition-colors ${
+                              driver.status === "pending"
+                                ? "bg-amber-50 text-amber-800 border-amber-200"
+                                : driver.status === "reviewed"
+                                ? "bg-blue-50 text-blue-800 border-blue-200"
+                                : driver.status === "approved"
+                                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                : "bg-rose-50 text-rose-800 border-rose-200"
                             }`}
                           >
-                            <option value="pending">Bekliyor</option>
+                            <option value="pending">Beklemede</option>
                             <option value="reviewed">İncelendi</option>
                             <option value="approved">Onaylandı</option>
                             <option value="rejected">Reddedildi</option>
                           </select>
-                          <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                        </div>
-                      </td>
 
-                      {/* Actions */}
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end space-x-1.5">
                           <Link
                             href={`/crm/drivers/${driver.id}`}
-                            className="p-1.5 text-gray-500 hover:text-[#285735] hover:bg-gray-100 rounded-lg transition-colors"
-                            title="Detaylı Profili Aç"
+                            className="p-2 rounded-xl text-gray-500 hover:text-[#285735] hover:bg-gray-100 transition-colors"
+                            title="Detayları Görüntüle"
                           >
                             <Eye className="w-4 h-4" />
                           </Link>
+
                           <button
                             onClick={() =>
                               handleDelete(driver.id, `${driver.firstName} ${driver.lastName}`)
                             }
-                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                            className="p-2 rounded-xl text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                             title="Başvuruyu Sil"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -548,50 +517,45 @@ export default function CRMDriverListPage() {
         )}
       </div>
 
-      {/* License Preview Modal */}
+      {/* Full-Screen Document Image Preview Modal */}
       {previewImage && (
         <div 
-          className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200"
           onClick={() => setPreviewImage(null)}
         >
           <div 
-            className="bg-[#111827] border border-white/20 rounded-2xl max-w-2xl w-full p-5 text-white shadow-2xl relative"
+            className="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
-              <h4 className="text-sm font-bold text-gray-200 flex items-center">
-                <ShieldCheck className="w-4 h-4 mr-2 text-[#c5a880]" />
-                {previewImage.title}
-              </h4>
-              <button
-                onClick={() => setPreviewImage(null)}
-                className="p-1 text-gray-400 hover:text-white rounded-lg hover:bg-white/10"
-              >
-                ✕
-              </button>
+            <div className="w-full flex items-center justify-between text-white pb-3 px-1">
+              <span className="text-sm font-semibold">{previewImage.title}</span>
+              <div className="flex items-center space-x-3">
+                <a
+                  href={previewImage.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-emerald-400 hover:underline flex items-center gap-1"
+                >
+                  <Download className="w-3.5 h-3.5" /> Orijinal Boyut
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPreviewImage(null)}
+                  className="px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Kapat
+                </button>
+              </div>
             </div>
 
-            <div className="relative w-full h-80 sm:h-96 rounded-xl overflow-hidden bg-black/60 border border-white/10">
+            <div className="relative w-full h-[70vh] rounded-2xl overflow-hidden bg-black border border-gray-800">
               <Image
                 src={previewImage.url}
                 alt={previewImage.title}
                 fill
                 className="object-contain"
+                unoptimized
               />
-            </div>
-
-            <div className="mt-4 flex items-center justify-between">
-              <span className="text-[11px] text-gray-400">
-                Orijinal yüksek çözünürlüklü belge
-              </span>
-              <a
-                href={previewImage.url}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center text-xs font-semibold text-[#c5a880] hover:underline"
-              >
-                Yeni Sekmede Orijinali Aç <ExternalLink className="w-3.5 h-3.5 ml-1" />
-              </a>
             </div>
           </div>
         </div>

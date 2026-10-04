@@ -9,81 +9,12 @@ declare global {
 const STORAGE_BUCKET = "driver-documents";
 const STORAGE_FILE_PATH = "data/drivers.json";
 
-const INITIAL_DEMO_DRIVERS: DriverApplication[] = [
-  {
-    id: "drv-2026-001",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(), // 3 hours ago
-    firstName: "Murat",
-    lastName: "Yılmaz",
-    phone: "+1 (786) 450-8912",
-    email: "murat.yilmaz.miami@gmail.com",
-    origin: "Türkiye / İstanbul",
-    yearsInUS: "6",
-    drivingExperienceYears: "10",
-    licenseNumber: "Y450-891-23-456-0",
-    licenseState: "FL",
-    hasChildren: true,
-    childrenDetails: "2 çocuk (7 ve 11 yaşlarında)",
-    hasSSN: true,
-    ssn: "***-**-4912",
-    licenseFrontUrl: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1200&q=80",
-    licenseBackUrl: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1200&q=80",
-    status: "pending",
-    notes: "Cadillac Escalade ESV ve Mercedes S-Class tecrübesi var. FBO / Tarmac ramp kurallarına hakim.",
-    languages: "Türkçe, İngilizce",
-    vehicleExperience: "Escalade ESV, Suburban, S-Class, Sprinter"
-  },
-  {
-    id: "drv-2026-002",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 26).toISOString(), // 1 day ago
-    firstName: "Carlos",
-    lastName: "Mendoza",
-    phone: "+1 (305) 555-7821",
-    email: "carlos.mendoza.vip@yahoo.com",
-    origin: "Colombia / Medellín",
-    yearsInUS: "12",
-    drivingExperienceYears: "15",
-    licenseNumber: "M532-110-82-310-0",
-    licenseState: "FL",
-    hasChildren: true,
-    childrenDetails: "1 çocuk (14 yaşında)",
-    hasSSN: true,
-    ssn: "***-**-8810",
-    licenseFrontUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=1200&q=80",
-    licenseBackUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=1200&q=80",
-    status: "approved",
-    notes: "Bilingüe (English/Spanish). Excellent private client references from Miami Beach Concierge desk.",
-    languages: "English, Spanish",
-    vehicleExperience: "Lincoln Navigator, Mercedes Maybach, Luxury Sprinter"
-  },
-  {
-    id: "drv-2026-003",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(), // 3 days ago
-    firstName: "Emre",
-    lastName: "Demir",
-    phone: "+1 (954) 890-3341",
-    email: "emre.demir.chauffeur@outlook.com",
-    origin: "Türkiye / Ankara",
-    yearsInUS: "4",
-    drivingExperienceYears: "7",
-    licenseNumber: "D340-992-14-880-0",
-    licenseState: "FL",
-    hasChildren: false,
-    childrenDetails: "Yok",
-    hasSSN: true,
-    ssn: "***-**-2204",
-    licenseFrontUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=1200&q=80",
-    licenseBackUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=1200&q=80",
-    status: "reviewed",
-    notes: "Art Basel ve F1 Miami haftasında aktif çalışabilir. Temiz sicil kaydı teyit edildi.",
-    languages: "Türkçe, İngilizce",
-    vehicleExperience: "Escalade, Suburban"
-  }
-];
+// No hardcoded mock/demo data — applications will only come from real driver submissions
+const INITIAL_DEMO_DRIVERS: DriverApplication[] = [];
 
 function getStore(): DriverApplication[] {
   if (!global.__ELMIA_DRIVERS_STORE) {
-    global.__ELMIA_DRIVERS_STORE = [...INITIAL_DEMO_DRIVERS];
+    global.__ELMIA_DRIVERS_STORE = [];
   }
   return global.__ELMIA_DRIVERS_STORE;
 }
@@ -100,8 +31,10 @@ async function loadFromRemote(): Promise<DriverApplication[]> {
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (!error && Array.isArray(data) && data.length > 0) {
-        return data.map(mapRowToDriver);
+      if (!error && Array.isArray(data)) {
+        const drivers = data.map(mapRowToDriver);
+        global.__ELMIA_DRIVERS_STORE = drivers;
+        return drivers;
       }
     } catch {
       // Table may not exist yet, fallback to Storage
@@ -116,7 +49,7 @@ async function loadFromRemote(): Promise<DriverApplication[]> {
       if (!error && data) {
         const text = await data.text();
         const parsed = JSON.parse(text);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           global.__ELMIA_DRIVERS_STORE = parsed;
           return parsed;
         }
@@ -157,22 +90,36 @@ interface SupabaseDriverRow {
   last_name: string;
   phone: string;
   email: string;
-  origin: string;
-  years_in_us: string;
-  driving_experience_years: string;
+  origin?: string;
+  address?: string;
+  date_of_birth?: string;
+  years_in_us?: string | number;
+  driving_experience_years?: string | number;
+  professional_driving_years?: string | number;
+  chauffeur_experience_years?: string | number;
+  worked_for_limo_company?: boolean;
+  previous_company_name?: string;
   license_number: string;
-  license_state?: string | null;
-  has_children?: boolean | null;
-  children_details?: string | null;
-  has_ssn?: boolean | null;
-  ssn?: string | null;
+  license_state?: string;
+  license_expiration_date?: string;
+  has_children?: boolean;
+  children_details?: string;
+  has_ssn?: boolean;
+  ssn?: string;
   license_front_url: string;
   license_back_url: string;
-  status: DriverStatus;
-  notes?: string | null;
-  languages?: string | null;
-  vehicle_experience?: string | null;
-  is_archived?: boolean | null;
+  has_chauffeur_registration?: boolean;
+  chauffeur_registration_number?: string;
+  chauffeur_registration_expiration_date?: string;
+  chauffeur_registration_front_url?: string;
+  chauffeur_registration_back_url?: string;
+  availability?: string[];
+  preferred_hours?: string;
+  status?: DriverStatus;
+  notes?: string;
+  languages?: string;
+  vehicle_experience?: string;
+  is_archived?: boolean;
 }
 
 function mapRowToDriver(row: SupabaseDriverRow): DriverApplication {
@@ -183,17 +130,31 @@ function mapRowToDriver(row: SupabaseDriverRow): DriverApplication {
     lastName: row.last_name,
     phone: row.phone,
     email: row.email,
+    dateOfBirth: row.date_of_birth,
+    address: row.address,
     origin: row.origin,
     yearsInUS: row.years_in_us,
     drivingExperienceYears: row.driving_experience_years,
+    professionalDrivingYears: row.professional_driving_years || row.driving_experience_years,
+    chauffeurExperienceYears: row.chauffeur_experience_years,
+    workedForLimoCompany: row.worked_for_limo_company,
+    previousCompanyName: row.previous_company_name,
     licenseNumber: row.license_number,
     licenseState: row.license_state || "FL",
+    licenseExpirationDate: row.license_expiration_date,
     hasChildren: Boolean(row.has_children),
     childrenDetails: row.children_details || undefined,
     hasSSN: Boolean(row.has_ssn),
     ssn: row.ssn || undefined,
     licenseFrontUrl: row.license_front_url,
     licenseBackUrl: row.license_back_url,
+    hasChauffeurRegistration: Boolean(row.has_chauffeur_registration),
+    chauffeurRegistrationNumber: row.chauffeur_registration_number,
+    chauffeurRegistrationExpirationDate: row.chauffeur_registration_expiration_date,
+    chauffeurRegistrationFrontUrl: row.chauffeur_registration_front_url,
+    chauffeurRegistrationBackUrl: row.chauffeur_registration_back_url,
+    availability: row.availability,
+    preferredHours: row.preferred_hours,
     status: row.status || "pending",
     notes: row.notes || undefined,
     languages: row.languages || undefined,
@@ -221,10 +182,10 @@ export async function addDriverApplication(
     ...data
   };
 
-  // Try insert into Postgres table `drivers`
+  // Try insert into Postgres table `drivers` if table exists
   if (isSupabaseConfigured() && supabase) {
     try {
-      const { error } = await supabase.from("drivers").insert({
+      await supabase.from("drivers").insert({
         id: newDriver.id,
         created_at: newDriver.createdAt,
         first_name: newDriver.firstName,
@@ -248,10 +209,6 @@ export async function addDriverApplication(
         vehicle_experience: newDriver.vehicleExperience || null,
         is_archived: false
       });
-
-      if (!error) {
-        console.log(`[DriversStorage] Saved driver ${newDriver.id} to Supabase table`);
-      }
     } catch {
       // Table may not exist yet, Storage fallback will handle it
     }
@@ -319,9 +276,6 @@ export async function updateDriverNotes(
 
 export async function deleteDriverApplication(id: string): Promise<boolean> {
   const current = await getAllDrivers();
-  const index = current.findIndex((d) => d.id === id);
-  if (index === -1) return false;
-
   const updated = current.filter((d) => d.id !== id);
 
   // Try delete from Postgres table
