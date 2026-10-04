@@ -19,15 +19,13 @@ import {
   AlertCircle, 
   XCircle, 
   Trash2, 
-  ExternalLink,
   MessageSquare,
   FileText,
   Eye,
-  EyeOff,
   Download,
   Check,
-  Send,
-  Sparkles
+  Sparkles,
+  FileBadge
 } from "lucide-react";
 import { DriverApplication, DriverStatus } from "@/types/driver";
 
@@ -39,7 +37,6 @@ export default function DriverDetailPage({ params }: { params: Promise<{ id: str
   const [driver, setDriver] = useState<DriverApplication | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [showSSN, setShowSSN] = useState(false);
 
   // Status & Note editing states
   const [status, setStatus] = useState<DriverStatus>("pending");
@@ -206,7 +203,7 @@ export default function DriverDetailPage({ params }: { params: Promise<{ id: str
             <button
               onClick={handleDelete}
               disabled={isDeleting}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all disabled:opacity-50 cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
               {isDeleting ? "Siliniyor..." : "Başvuruyu Sil"}
@@ -243,7 +240,7 @@ export default function DriverDetailPage({ params }: { params: Promise<{ id: str
                   </span>
                   <span className="flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-slate-500" />
-                    Memleket / Köken: <strong className="text-slate-200">{driver.origin}</strong>
+                    Adres / Konum: <strong className="text-slate-200">{driver.address || driver.origin || "-"}</strong>
                   </span>
                 </div>
               </div>
@@ -328,6 +325,11 @@ export default function DriverDetailPage({ params }: { params: Promise<{ id: str
                 </div>
 
                 <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                  <span className="text-xs text-slate-500 block mb-1">Doğum Tarihi</span>
+                  <span className="text-sm font-semibold text-white">{driver.dateOfBirth || "-"}</span>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80">
                   <span className="text-xs text-slate-500 block mb-1">Telefon</span>
                   <a href={`tel:${driver.phone}`} className="text-sm font-semibold text-emerald-400 hover:underline">
                     {driver.phone}
@@ -341,46 +343,76 @@ export default function DriverDetailPage({ params }: { params: Promise<{ id: str
                   </a>
                 </div>
 
-                <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80">
-                  <span className="text-xs text-slate-500 block mb-1">Nereli Olduğu (Memleket / Köken)</span>
-                  <span className="text-sm font-semibold text-white">{driver.origin}</span>
+                <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 sm:col-span-2">
+                  <span className="text-xs text-slate-500 block mb-1">İkamet Adresi</span>
+                  <span className="text-sm font-semibold text-white">{driver.address || driver.origin || "-"}</span>
                 </div>
 
                 <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80">
-                  <span className="text-xs text-slate-500 block mb-1">Amerika&apos;da Yaşama Süresi</span>
+                  <span className="text-xs text-slate-500 block mb-1">Profesyonel Sürüş Tecrübesi</span>
                   <span className="text-sm font-semibold text-emerald-400">
-                    {driver.yearsInUS} Yıl
+                    {driver.professionalDrivingYears || driver.drivingExperienceYears || "-"} Yıl
                   </span>
                 </div>
 
                 <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80">
-                  <span className="text-xs text-slate-500 block mb-1">Şoförlük Tecrübesi</span>
+                  <span className="text-xs text-slate-500 block mb-1">Chauffeur / Limuzin Tecrübesi</span>
                   <span className="text-sm font-semibold text-teal-400">
-                    {driver.drivingExperienceYears} Yıl Aktif
+                    {driver.chauffeurExperienceYears || "-"} Yıl
                   </span>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 sm:col-span-2">
+                  <span className="text-xs text-slate-500 block mb-1">Daha Önce Limo / Black Car Şirketinde Çalıştı mı?</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-white">
+                      {driver.workedForLimoCompany ? "Evet" : "Hayır / Belirtilmedi"}
+                    </span>
+                    {driver.previousCompanyName && (
+                      <span className="text-xs text-emerald-400">
+                        ({driver.previousCompanyName})
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Availability & Preferred Hours */}
+                <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 sm:col-span-2">
+                  <span className="text-xs text-slate-500 block mb-1">Müsaitlik &amp; Tercih Edilen Saatler</span>
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    {driver.availability && Array.isArray(driver.availability) && driver.availability.length > 0 ? (
+                      driver.availability.map((opt) => (
+                        <span key={opt} className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-300 text-xs font-medium border border-emerald-500/20">
+                          {opt}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-sm text-slate-400">Belirtilmedi</span>
+                    )}
+                    {driver.preferredHours && (
+                      <span className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 text-xs font-medium border border-slate-700">
+                        Saat: {driver.preferredHours}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {driver.languages && (
-                  <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                  <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 sm:col-span-2">
                     <span className="text-xs text-slate-500 block mb-1">Konuştuğu Diller</span>
-                    <span className="text-sm text-slate-200">{driver.languages}</span>
-                  </div>
-                )}
-
-                {driver.vehicleExperience && (
-                  <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80">
-                    <span className="text-xs text-slate-500 block mb-1">Araç Deneyimi</span>
-                    <span className="text-sm text-slate-200">{driver.vehicleExperience}</span>
+                    <span className="text-sm text-slate-200">
+                      {Array.isArray(driver.languages) ? driver.languages.join(", ") : driver.languages}
+                    </span>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Card: Legal & Family Status */}
+            {/* Card: Legal Status & Documents Info */}
             <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-sm">
               <h2 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                Yasal Belgeler & Aile Durumu
+                Ehliyet &amp; Chauffeur Registration Bilgileri
               </h2>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -399,59 +431,46 @@ export default function DriverDetailPage({ params }: { params: Promise<{ id: str
                   </div>
                 </div>
 
-                {/* SSN Status */}
+                {/* License Expiry */}
                 <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80">
-                  <span className="text-xs text-slate-500 block mb-1">SSN (Social Security Number)</span>
-                  {driver.hasSSN ? (
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1 text-xs text-emerald-400 font-semibold">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Var
-                        </span>
-                        <span className="text-sm font-mono text-slate-300">
-                          {showSSN ? (driver.ssn || "Belirtilmedi") : (driver.ssn ? `***-**-${driver.ssn.slice(-4)}` : "Mevcut")}
-                        </span>
-                      </div>
-                      {driver.ssn && (
-                        <button
-                          type="button"
-                          onClick={() => setShowSSN(!showSSN)}
-                          className="text-slate-400 hover:text-white p-1 rounded transition-colors"
-                          title={showSSN ? "SSN Gizle" : "SSN Göster"}
-                        >
-                          {showSSN ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      )}
+                  <span className="text-xs text-slate-500 block mb-1">Ehliyet Son Geçerlilik Tarihi</span>
+                  <span className="text-sm font-semibold text-white">
+                    {driver.licenseExpirationDate || "Belirtilmedi"}
+                  </span>
+                </div>
+
+                {/* Chauffeur Registration Info */}
+                <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 sm:col-span-2">
+                  <span className="text-xs text-slate-500 block mb-1">Chauffeur Registration (Opsiyonel)</span>
+                  {driver.hasChauffeurRegistration ? (
+                    <div className="space-y-1">
+                      <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-semibold">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Mevcut
+                      </span>
+                      <p className="text-sm text-slate-200">
+                        No: <span className="font-mono font-semibold">{driver.chauffeurRegistrationNumber || "-"}</span> • Bitiş: {driver.chauffeurRegistrationExpirationDate || "-"}
+                      </p>
                     </div>
                   ) : (
-                    <span className="inline-flex items-center gap-1 text-xs text-slate-400">
-                      <XCircle className="w-3.5 h-3.5 text-slate-500" /> Yok / Başvurulmadı
+                    <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
+                      <XCircle className="w-3.5 h-3.5 text-slate-500" /> Chauffeur Registration Belgesi Yok
                     </span>
                   )}
                 </div>
 
-                {/* Children Details */}
-                <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 sm:col-span-2">
-                  <span className="text-xs text-slate-500 block mb-1">Çocuk Durumu</span>
-                  {driver.hasChildren ? (
-                    <div className="space-y-1">
-                      <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-semibold">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Çocuğu Var
-                      </span>
-                      {driver.childrenDetails ? (
-                        <p className="text-sm text-slate-300 mt-1 pl-5 border-l-2 border-emerald-500/40">
-                          {driver.childrenDetails}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-slate-500 pl-5">Detay belirtilmemiş.</p>
-                      )}
-                    </div>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
-                      <XCircle className="w-3.5 h-3.5 text-slate-500" /> Çocuğu Yok
-                    </span>
-                  )}
-                </div>
+                {/* Legacy SSN & Family info (only if present in old records) */}
+                {driver.hasSSN && (
+                  <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                    <span className="text-xs text-slate-500 block mb-1">SSN (Eski Kayıt)</span>
+                    <span className="text-sm font-mono text-slate-300">{driver.ssn || "Mevcut"}</span>
+                  </div>
+                )}
+                {driver.hasChildren && (
+                  <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                    <span className="text-xs text-slate-500 block mb-1">Çocuk Bilgisi (Eski Kayıt)</span>
+                    <span className="text-sm text-slate-300">{driver.childrenDetails || "Mevcut"}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -469,14 +488,10 @@ export default function DriverDetailPage({ params }: { params: Promise<{ id: str
                 )}
               </div>
 
-              <p className="text-xs text-slate-400 mb-3">
-                Mülakat değerlendirmeleri, referans aramaları, müsaitlik durumu veya özel notlar ekleyebilirsiniz.
-              </p>
-
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Örn: Telefon mülakatı yapıldı, İngilizcesi ve güzergah bilgisi çok iyi. Las Vegas CES ve Formula 1 dönemlerinde tam zamanlı çalışabilir..."
+                placeholder="Örn: Telefon mülakatı yapıldı, İngilizcesi ve güzergah bilgisi çok iyi..."
                 rows={4}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 resize-y transition-colors"
               />
@@ -486,7 +501,7 @@ export default function DriverDetailPage({ params }: { params: Promise<{ id: str
                   type="button"
                   onClick={handleSaveNotes}
                   disabled={isSavingNotes}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-all disabled:opacity-50 shadow-sm"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-all disabled:opacity-50 shadow-sm cursor-pointer"
                 >
                   <Save className="w-3.5 h-3.5" />
                   {isSavingNotes ? "Kaydediliyor..." : "Notu Kaydet"}
@@ -496,7 +511,7 @@ export default function DriverDetailPage({ params }: { params: Promise<{ id: str
 
           </div>
 
-          {/* Right Column: Driver License Photos & Quick Verification (1 col) */}
+          {/* Right Column: Driver License Photos & Chauffeur Reg Photos */}
           <div className="space-y-6">
 
             {/* License Photos Card */}
@@ -589,6 +604,52 @@ export default function DriverDetailPage({ params }: { params: Promise<{ id: str
               </div>
             </div>
 
+            {/* Chauffeur Registration Photos (if uploaded) */}
+            {(driver.chauffeurRegistrationFrontUrl || driver.chauffeurRegistrationBackUrl) && (
+              <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-sm space-y-5">
+                <h2 className="text-base font-semibold text-white flex items-center gap-2">
+                  <FileBadge className="w-4 h-4 text-emerald-400" />
+                  Chauffeur Registration Belgeleri
+                </h2>
+
+                {driver.chauffeurRegistrationFrontUrl && (
+                  <div className="space-y-2">
+                    <span className="text-xs font-semibold text-slate-300">Belge Ön Yüz</span>
+                    <div 
+                      onClick={() => setSelectedImage({ url: driver.chauffeurRegistrationFrontUrl!, title: `${driver.firstName} ${driver.lastName} - Chauffeur Reg Ön` })}
+                      className="group relative aspect-[16/10] rounded-xl overflow-hidden bg-slate-950 border border-slate-800 cursor-pointer hover:border-emerald-500/50 transition-all"
+                    >
+                      <Image
+                        src={driver.chauffeurRegistrationFrontUrl}
+                        alt="Chauffeur Reg Front"
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        unoptimized
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {driver.chauffeurRegistrationBackUrl && (
+                  <div className="space-y-2 pt-2 border-t border-slate-800/80">
+                    <span className="text-xs font-semibold text-slate-300">Belge Arka Yüz</span>
+                    <div 
+                      onClick={() => setSelectedImage({ url: driver.chauffeurRegistrationBackUrl!, title: `${driver.firstName} ${driver.lastName} - Chauffeur Reg Arka` })}
+                      className="group relative aspect-[16/10] rounded-xl overflow-hidden bg-slate-950 border border-slate-800 cursor-pointer hover:border-emerald-500/50 transition-all"
+                    >
+                      <Image
+                        src={driver.chauffeurRegistrationBackUrl}
+                        alt="Chauffeur Reg Back"
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        unoptimized
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Quick Verification Checklist */}
             <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-sm space-y-3">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
@@ -606,11 +667,11 @@ export default function DriverDetailPage({ params }: { params: Promise<{ id: str
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
-                  <span>Amerika şoförlük tecrübesi VIP standartlarına uygun mu?</span>
+                  <span>Sürüş ve limuzin deneyimi VIP standartlarına uygun mu?</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
-                  <span>Telefon ve WhatsApp üzerinden teyit sağlandı mı?</span>
+                  <span>Müsaitlik ve çalışma saatleri operasyon planına uyuyor mu?</span>
                 </li>
               </ul>
             </div>
@@ -645,7 +706,7 @@ export default function DriverDetailPage({ params }: { params: Promise<{ id: str
                 <button
                   type="button"
                   onClick={() => setSelectedImage(null)}
-                  className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors"
+                  className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
                 >
                   Kapat (ESC)
                 </button>

@@ -445,52 +445,59 @@ export async function sendDriverNotificationEmail(
                   </td>
                 </tr>
                 <tr>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Nereli Olduğu</td>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px; font-weight: 600;">${driver.origin}</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Date of Birth</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px;">${driver.dateOfBirth || "-"}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">ABD'de Yaşama Süresi</td>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px;">${driver.yearsInUS} yıl</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Address</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px;">${driver.address || "-"}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Şoförlük Tecrübesi</td>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px; font-weight: 600;">${driver.drivingExperienceYears} yıl</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Professional Exp</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px; font-weight: 600;">${driver.professionalDrivingYears || driver.drivingExperienceYears || "-"} years</td>
                 </tr>
                 <tr>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Ehliyet No & Eyalet</td>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px; font-family: monospace;">${driver.licenseNumber} (${driver.licenseState || "FL"})</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Chauffeur Exp</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px; font-weight: 600;">${driver.chauffeurExperienceYears || "-"} years</td>
                 </tr>
                 <tr>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Çocuk Durumu</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Limo Co Exp</td>
                   <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px;">
-                    ${driver.hasChildren ? `Var (${driver.childrenDetails || "Belirtildi"})` : "Yok"}
+                    ${driver.workedForLimoCompany ? `Yes (${driver.previousCompanyName || "Company not specified"})` : "No"}
                   </td>
                 </tr>
                 <tr>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">SSN Durumu</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">License No & State</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px; font-family: monospace;">${driver.licenseNumber} (${driver.licenseState || "FL"}) - Exp: ${driver.licenseExpirationDate || "-"}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Chauffeur Reg</td>
                   <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px;">
-                    ${driver.hasSSN ? `Mevcut (${driver.ssn || "***"})` : "Yok / Belirtilmedi"}
+                    ${driver.hasChauffeurRegistration ? `Yes (No: ${driver.chauffeurRegistrationNumber || "-"}, Exp: ${driver.chauffeurRegistrationExpirationDate || "-"})` : "No"}
                   </td>
                 </tr>
+                ${driver.availability && (Array.isArray(driver.availability) ? driver.availability.length > 0 : true) ? `
+                <tr>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Availability</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px;">${Array.isArray(driver.availability) ? driver.availability.join(", ") : driver.availability} (${driver.preferredHours || "Flexible"})</td>
+                </tr>` : ""}
                 ${driver.languages ? `
                 <tr>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Diller</td>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px;">${driver.languages}</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Languages</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px;">${Array.isArray(driver.languages) ? driver.languages.join(", ") : driver.languages}</td>
                 </tr>` : ""}
               </table>
 
               <!-- License Photos Links -->
               <div style="background-color: #0d121c; border: 1px solid #1e293b; border-left: 3px solid #c5a880; border-radius: 6px; padding: 16px 20px; margin-bottom: 24px;">
                 <div style="font-size: 12px; font-weight: 700; color: #c5a880; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">
-                  Ehliyet Fotoğrafları (Önlü / Arkalı)
+                  Submitted Documents
                 </div>
-                <div style="font-size: 13px; color: #e2e8f0;">
-                  <p style="margin: 0 0 6px 0;">
-                    🪪 <strong>Ön Yüz:</strong> <a href="${driver.licenseFrontUrl}" target="_blank" style="color: #38bdf8; text-decoration: underline;">Ehliyet Ön Yüzünü Görüntüle →</a>
-                  </p>
-                  <p style="margin: 0;">
-                    🪪 <strong>Arka Yüz:</strong> <a href="${driver.licenseBackUrl}" target="_blank" style="color: #38bdf8; text-decoration: underline;">Ehliyet Arka Yüzünü Görüntüle →</a>
-                  </p>
+                <div style="font-size: 13px; color: #e2e8f0; line-height: 1.8;">
+                  <p style="margin: 0;">🪪 <strong>Driver's License (Front):</strong> <a href="${driver.licenseFrontUrl}" target="_blank" style="color: #38bdf8; text-decoration: underline;">View Front Photo →</a></p>
+                  <p style="margin: 0;">🪪 <strong>Driver's License (Back):</strong> <a href="${driver.licenseBackUrl}" target="_blank" style="color: #38bdf8; text-decoration: underline;">View Back Photo →</a></p>
+                  ${driver.chauffeurRegistrationFrontUrl ? `<p style="margin: 0;">📄 <strong>Chauffeur Reg (Front):</strong> <a href="${driver.chauffeurRegistrationFrontUrl}" target="_blank" style="color: #38bdf8; text-decoration: underline;">View Front Photo →</a></p>` : ""}
+                  ${driver.chauffeurRegistrationBackUrl ? `<p style="margin: 0;">📄 <strong>Chauffeur Reg (Back):</strong> <a href="${driver.chauffeurRegistrationBackUrl}" target="_blank" style="color: #38bdf8; text-decoration: underline;">View Back Photo →</a></p>` : ""}
                 </div>
               </div>
 

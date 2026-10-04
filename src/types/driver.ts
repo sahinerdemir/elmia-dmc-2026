@@ -5,24 +5,52 @@ export interface DriverApplication {
   createdAt: string; // ISO date string
   firstName: string;
   lastName: string;
+  dateOfBirth?: string;
   phone: string;
   email: string;
-  origin: string; // Nereli olduğu (Ülke / Şehir / Hometown)
-  yearsInUS: string | number; // Kaç yıldır Amerika'da yaşadığı
-  drivingExperienceYears: string | number; // Kaç yıldır şoförlük işi yaptığı
-  licenseNumber: string; // Ehliyet numarası
-  licenseState?: string; // Ehliyetin verildiği eyalet (örn: FL, NY, CA)
-  hasChildren: boolean; // Çocuğu var mı
-  childrenDetails?: string; // Çocuğu varsa sayısı / bilgisi
-  hasSSN: boolean; // SSN'i var mı
-  ssn?: string; // Varsa SSN numarası
-  licenseFrontUrl: string; // Ehliyet ön yüz fotoğraf URL'i
-  licenseBackUrl: string; // Ehliyet arka yüz fotoğraf URL'i
-  status: DriverStatus;
-  notes?: string; // Operasyon / inceleme notları
-  languages?: string; // Konuştuğu diller
-  vehicleExperience?: string; // Tecrübeli olduğu araç tipleri (SUV, Sprinter, Limousine vs.)
+  address?: string;
+
+  // Driving Experience
+  professionalDrivingYears?: string | number;
+  chauffeurExperienceYears?: string | number;
+  workedForLimoCompany?: boolean;
+  previousCompanyName?: string;
+
+  // Driver's License — Required
+  licenseNumber: string;
+  licenseState: string;
+  licenseExpirationDate?: string;
+  licenseFrontUrl: string;
+  licenseBackUrl: string;
+
+  // Chauffeur Registration — Optional
+  hasChauffeurRegistration?: boolean;
+  chauffeurRegistrationNumber?: string;
+  chauffeurRegistrationExpirationDate?: string;
+  chauffeurRegistrationFrontUrl?: string;
+  chauffeurRegistrationBackUrl?: string;
+
+  // Availability & Schedule
+  availability?: string[]; // ["Full Time", "Part Time", "Weekdays", "Weekends", "Flexible"]
+  preferredHours?: string; // "Day", "Evening", "Night", "Flexible"
+
+  // Languages & Additional Notes
+  languages?: string | string[];
+  notes?: string;
+  certified?: boolean;
+
+  // Legacy/Backwards Compatibility fields (keeps CRM / existing records intact)
+  origin?: string;
+  yearsInUS?: string | number;
+  drivingExperienceYears?: string | number;
+  hasChildren?: boolean;
+  childrenDetails?: string;
+  hasSSN?: boolean;
+  ssn?: string;
+  vehicleExperience?: string;
   isArchived?: boolean;
+
+  status: DriverStatus;
 }
 
 export interface DriverFilterOptions {

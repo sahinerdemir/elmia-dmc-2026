@@ -9,37 +9,68 @@ import {
   CheckCircle2, 
   AlertCircle, 
   X, 
-  FileText,
   Send,
-  Camera
+  Camera,
+  FileCheck2
 } from "lucide-react";
 
 export default function DriverApplicationPage() {
   const [formData, setFormData] = useState({
+    // 1. Personal Information
     firstName: "",
     lastName: "",
+    dateOfBirth: "",
     phone: "",
     email: "",
-    origin: "",
-    yearsInUS: "",
-    drivingExperienceYears: "",
+    address: "",
+
+    // 2. Driving Experience
+    professionalDrivingYears: "",
+    chauffeurExperienceYears: "",
+    workedForLimoCompany: false,
+    previousCompanyName: "",
+
+    // 3. Driver's License — Required
     licenseNumber: "",
     licenseState: "FL",
-    hasChildren: false,
-    childrenDetails: "",
-    hasSSN: true,
-    ssn: "",
-    notes: ""
+    licenseExpirationDate: "",
+
+    // 4. Chauffeur Registration — Optional
+    hasChauffeurRegistration: false,
+    chauffeurRegistrationNumber: "",
+    chauffeurRegistrationExpirationDate: "",
+
+    // 5. Availability
+    availability: [] as string[],
+    preferredHours: "Flexible",
+
+    // 6. Languages
+    languages: ["English"] as string[],
+    otherLanguage: "",
+
+    // 7. Additional Information
+    notes: "",
+
+    // 8. Applicant Certification
+    certified: false
   });
 
-  // License photos upload state
-  const [frontFile, setFrontFile] = useState<File | null>(null);
-  const [frontPreview, setFrontPreview] = useState<string | null>(null);
-  const [backFile, setBackFile] = useState<File | null>(null);
-  const [backPreview, setBackPreview] = useState<string | null>(null);
+  // License photos (Required)
+  const [licenseFrontFile, setLicenseFrontFile] = useState<File | null>(null);
+  const [licenseFrontPreview, setLicenseFrontPreview] = useState<string | null>(null);
+  const [licenseBackFile, setLicenseBackFile] = useState<File | null>(null);
+  const [licenseBackPreview, setLicenseBackPreview] = useState<string | null>(null);
 
-  const frontInputRef = useRef<HTMLInputElement>(null);
-  const backInputRef = useRef<HTMLInputElement>(null);
+  // Chauffeur Registration photos (Optional)
+  const [chauffeurFrontFile, setChauffeurFrontFile] = useState<File | null>(null);
+  const [chauffeurFrontPreview, setChauffeurFrontPreview] = useState<string | null>(null);
+  const [chauffeurBackFile, setChauffeurBackFile] = useState<File | null>(null);
+  const [chauffeurBackPreview, setChauffeurBackPreview] = useState<string | null>(null);
+
+  const licenseFrontInputRef = useRef<HTMLInputElement>(null);
+  const licenseBackInputRef = useRef<HTMLInputElement>(null);
+  const chauffeurFrontInputRef = useRef<HTMLInputElement>(null);
+  const chauffeurBackInputRef = useRef<HTMLInputElement>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>("");
@@ -47,25 +78,32 @@ export default function DriverApplicationPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [createdDriverId, setCreatedDriverId] = useState<string>("");
 
-  const handleFrontFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setFrontFile(file);
-      setFrontPreview(URL.createObjectURL(file));
-      setErrorMsg(null);
-    }
+  // Helpers for multi-select
+  const toggleAvailability = (option: string) => {
+    setFormData((prev) => {
+      const exists = prev.availability.includes(option);
+      return {
+        ...prev,
+        availability: exists
+          ? prev.availability.filter((item) => item !== option)
+          : [...prev.availability, option]
+      };
+    });
   };
 
-  const handleBackFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setBackFile(file);
-      setBackPreview(URL.createObjectURL(file));
-      setErrorMsg(null);
-    }
+  const toggleLanguage = (lang: string) => {
+    setFormData((prev) => {
+      const exists = prev.languages.includes(lang);
+      return {
+        ...prev,
+        languages: exists
+          ? prev.languages.filter((l) => l !== lang)
+          : [...prev.languages, lang]
+      };
+    });
   };
 
-  const uploadFile = async (file: File, side: "front" | "back"): Promise<string> => {
+  const handleFileUpload = async (file: File, side: string): Promise<string> => {
     const data = new FormData();
     data.append("file", file);
     data.append("side", side);
@@ -76,12 +114,12 @@ export default function DriverApplicationPage() {
     });
 
     if (!res.ok) {
-      throw new Error(`Ehliyet ${side === "front" ? "ön" : "arka"} yüzü yüklenemedi.`);
+      throw new Error(`Failed to upload ${file.name}.`);
     }
 
     const json = await res.json();
     if (!json.success || !json.url) {
-      throw new Error(json.error || `Ehliyet ${side === "front" ? "ön" : "arka"} yüzü yüklenemedi.`);
+      throw new Error(json.error || `Failed to upload ${file.name}.`);
     }
 
     return json.url;
@@ -91,77 +129,138 @@ export default function DriverApplicationPage() {
     e.preventDefault();
     setErrorMsg(null);
 
-    // Validations
+    // 1. Personal Information Validations
     if (!formData.firstName.trim() || !formData.lastName.trim()) {
-      setErrorMsg("Lütfen adınızı ve soyadınızı eksiksiz giriniz.");
+      setErrorMsg("Please enter your full first name and last name.");
+      return;
+    }
+
+    if (!formData.dateOfBirth.trim()) {
+      setErrorMsg("Please enter your date of birth.");
       return;
     }
 
     if (!formData.phone.trim()) {
-      setErrorMsg("Lütfen geçerli bir telefon numarası giriniz.");
+      setErrorMsg("Please enter a valid phone number.");
       return;
     }
 
-    if (!formData.origin.trim()) {
-      setErrorMsg("Lütfen aslen nereli olduğunuzu belirtiniz.");
+    if (!formData.email.trim()) {
+      setErrorMsg("Please enter a valid email address.");
       return;
     }
 
-    if (!formData.yearsInUS.trim()) {
-      setErrorMsg("Lütfen kaç yıldır Amerika'da yaşadığınızı belirtiniz.");
+    if (!formData.address.trim()) {
+      setErrorMsg("Please enter your current address.");
       return;
     }
 
-    if (!formData.drivingExperienceYears.trim()) {
-      setErrorMsg("Lütfen kaç yıldır şoförlük yaptığınızı belirtiniz.");
+    // 2. Driving Experience Validations
+    if (!formData.professionalDrivingYears.trim()) {
+      setErrorMsg("Please specify how many years of professional driving experience you have.");
       return;
     }
 
+    if (!formData.chauffeurExperienceYears.trim()) {
+      setErrorMsg("Please specify how many years of chauffeur / limousine driving experience you have.");
+      return;
+    }
+
+    // 3. Driver's License Validations
     if (!formData.licenseNumber.trim()) {
-      setErrorMsg("Lütfen ehliyet numaranızı giriniz.");
+      setErrorMsg("Please enter your driver's license number.");
       return;
     }
 
-    if (!frontFile) {
-      setErrorMsg("Lütfen ehliyetinizin ön yüz fotoğrafını yükleyiniz.");
+    if (!formData.licenseState.trim()) {
+      setErrorMsg("Please select the issuing state of your driver's license.");
       return;
     }
 
-    if (!backFile) {
-      setErrorMsg("Lütfen ehliyetinizin arka yüz fotoğrafını yükleyiniz.");
+    if (!formData.licenseExpirationDate.trim()) {
+      setErrorMsg("Please enter your driver's license expiration date.");
+      return;
+    }
+
+    if (!licenseFrontFile) {
+      setErrorMsg("Please upload clear photo of the FRONT of your driver's license.");
+      return;
+    }
+
+    if (!licenseBackFile) {
+      setErrorMsg("Please upload clear photo of the BACK of your driver's license.");
+      return;
+    }
+
+    // 4. Certification Validation
+    if (!formData.certified) {
+      setErrorMsg("You must check the applicant certification box before submitting.");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // Step 1: Upload Front Photo
-      setUploadProgress("Ehliyet ön yüz fotoğrafı yükleniyor...");
-      const frontUrl = await uploadFile(frontFile, "front");
+      // Upload Required License Files
+      setUploadProgress("Uploading driver's license (front)...");
+      const licenseFrontUrl = await handleFileUpload(licenseFrontFile, "license-front");
 
-      // Step 2: Upload Back Photo
-      setUploadProgress("Ehliyet arka yüz fotoğrafı yükleniyor...");
-      const backUrl = await uploadFile(backFile, "back");
+      setUploadProgress("Uploading driver's license (back)...");
+      const licenseBackUrl = await handleFileUpload(licenseBackFile, "license-back");
 
-      // Step 3: Submit Application Data
-      setUploadProgress("Başvuru kaydediliyor...");
+      // Upload Optional Chauffeur Registration Files (if provided)
+      let chauffeurFrontUrl = "";
+      let chauffeurBackUrl = "";
+
+      if (formData.hasChauffeurRegistration) {
+        if (chauffeurFrontFile) {
+          setUploadProgress("Uploading chauffeur registration (front)...");
+          chauffeurFrontUrl = await handleFileUpload(chauffeurFrontFile, "chauffeur-front");
+        }
+        if (chauffeurBackFile) {
+          setUploadProgress("Uploading chauffeur registration (back)...");
+          chauffeurBackUrl = await handleFileUpload(chauffeurBackFile, "chauffeur-back");
+        }
+      }
+
+      // Compile Languages list
+      const finalLanguages = [...formData.languages];
+      if (formData.otherLanguage.trim()) {
+        finalLanguages.push(formData.otherLanguage.trim());
+      }
+
+      // Submit Payload
+      setUploadProgress("Submitting application...");
       const payload = {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
+        dateOfBirth: formData.dateOfBirth.trim(),
         phone: formData.phone.trim(),
-        email: formData.email.trim() || undefined,
-        origin: formData.origin.trim(),
-        yearsInUS: formData.yearsInUS.trim(),
-        drivingExperienceYears: formData.drivingExperienceYears.trim(),
+        email: formData.email.trim(),
+        address: formData.address.trim(),
+
+        professionalDrivingYears: formData.professionalDrivingYears.trim(),
+        chauffeurExperienceYears: formData.chauffeurExperienceYears.trim(),
+        workedForLimoCompany: Boolean(formData.workedForLimoCompany),
+        previousCompanyName: formData.workedForLimoCompany ? formData.previousCompanyName.trim() : undefined,
+
         licenseNumber: formData.licenseNumber.trim().toUpperCase(),
-        licenseState: formData.licenseState.trim().toUpperCase() || "FL",
-        hasChildren: Boolean(formData.hasChildren),
-        childrenDetails: formData.hasChildren ? formData.childrenDetails.trim() : undefined,
-        hasSSN: Boolean(formData.hasSSN),
-        ssn: formData.hasSSN && formData.ssn.trim() ? formData.ssn.trim() : undefined,
-        licenseFrontUrl: frontUrl,
-        licenseBackUrl: backUrl,
-        notes: formData.notes.trim() || undefined
+        licenseState: formData.licenseState.trim().toUpperCase(),
+        licenseExpirationDate: formData.licenseExpirationDate.trim(),
+        licenseFrontUrl,
+        licenseBackUrl,
+
+        hasChauffeurRegistration: Boolean(formData.hasChauffeurRegistration),
+        chauffeurRegistrationNumber: formData.hasChauffeurRegistration ? formData.chauffeurRegistrationNumber.trim() : undefined,
+        chauffeurRegistrationExpirationDate: formData.hasChauffeurRegistration ? formData.chauffeurRegistrationExpirationDate.trim() : undefined,
+        chauffeurRegistrationFrontUrl: chauffeurFrontUrl || undefined,
+        chauffeurRegistrationBackUrl: chauffeurBackUrl || undefined,
+
+        availability: formData.availability,
+        preferredHours: formData.preferredHours,
+        languages: finalLanguages,
+        notes: formData.notes.trim() || undefined,
+        certified: true
       };
 
       const res = await fetch("/api/drivers/apply", {
@@ -173,21 +272,46 @@ export default function DriverApplicationPage() {
       const result = await res.json();
 
       if (!res.ok || !result.success) {
-        throw new Error(result.error || "Başvuru gönderilirken bir hata oluştu.");
+        throw new Error(result.error || "An error occurred while submitting your application.");
       }
 
-      setCreatedDriverId(result.driver?.id || "");
+      setCreatedDriverId(result.driverId || "");
       setIsSuccess(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err: unknown) {
       console.error("Submission failed:", err);
-      const errorMessage = err instanceof Error ? err.message : "Ağ bağlantısı hatası. Lütfen tekrar deneyiniz.";
+      const errorMessage = err instanceof Error ? err.message : "Network error. Please try again.";
       setErrorMsg(errorMessage);
     } finally {
       setIsSubmitting(false);
       setUploadProgress("");
     }
   };
+
+  const availabilityOptions = [
+    "Full Time",
+    "Part Time",
+    "Weekdays",
+    "Weekends",
+    "Flexible"
+  ];
+
+  const preferredHoursOptions = [
+    "Day",
+    "Evening",
+    "Night",
+    "Flexible"
+  ];
+
+  const languageOptions = [
+    "English",
+    "Spanish",
+    "Turkish",
+    "Arabic",
+    "French",
+    "Russian",
+    "Portuguese"
+  ];
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -210,14 +334,14 @@ export default function DriverApplicationPage() {
               Home
             </Link>
             <ChevronRight className="w-3 h-3 text-white/40" />
-            <span className="text-[#61CE70] font-semibold">Şoför Başvurusu</span>
+            <span className="text-[#61CE70] font-semibold">Driver Application</span>
           </nav>
 
           <h1 className="text-2xl sm:text-4xl lg:text-5xl font-normal text-white tracking-tight leading-tight mb-3 font-heading">
-            Şoför Başvuru Formu
+            Driver Application Form
           </h1>
           <p className="text-sm sm:text-base text-white/80 leading-relaxed font-normal max-w-2xl">
-            Elmia DMC bünyesindeki VIP transfer ve kurumsal delegasyon operasyonlarımızda görev alacak profesyonel şoförler için başvuru formu.
+            Official application form for professional executive chauffeurs joining ELMIA DMC&apos;s VIP transportation and corporate logistics fleet.
           </p>
         </div>
       </section>
@@ -232,20 +356,20 @@ export default function DriverApplicationPage() {
                 <CheckCircle2 className="w-8 h-8" />
               </div>
               <h2 className="text-2xl sm:text-3xl font-bold text-[#1a3822] mb-3">
-                Başvurunuz Alındı
+                Application Submitted Successfully
               </h2>
               <p className="text-sm sm:text-base text-[#555555] max-w-md mx-auto leading-relaxed mb-6">
-                Sayın <strong className="text-[#1a3822]">{formData.firstName} {formData.lastName}</strong>, şoför başvurunuz ve ehliyet belgeleriniz operasyon ekibimize iletilmiştir.
+                Thank you, <strong className="text-[#1a3822]">{formData.firstName} {formData.lastName}</strong>. Your driver application and submitted documents have been received by our operations desk.
               </p>
 
               {createdDriverId && (
                 <div className="bg-[#f8faf8] border border-gray-200 rounded-xl p-3.5 max-w-sm mx-auto mb-6 text-xs text-[#555555]">
-                  Başvuru Referans Numarası: <strong className="text-[#1a3822] font-mono">{createdDriverId.slice(0, 8)}</strong>
+                  Application Reference: <strong className="text-[#1a3822] font-mono">{createdDriverId.slice(0, 8)}</strong>
                 </div>
               )}
 
               <p className="text-xs text-[#666666] mb-8 max-w-md mx-auto">
-                Operasyon yöneticilerimiz başvurunuzu inceledikten sonra telefon veya e-posta üzerinden sizinle iletişime geçecektir.
+                Our operations team will review your qualifications and contact you via phone or email regarding next steps.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -253,7 +377,7 @@ export default function DriverApplicationPage() {
                   href="/"
                   className="w-full sm:w-auto px-6 py-3 bg-[#285735] hover:bg-[#1f4429] text-white font-semibold text-xs rounded-xl transition-all shadow-sm"
                 >
-                  Ana Sayfaya Dön
+                  Return to Home
                 </Link>
                 <button
                   type="button"
@@ -262,27 +386,39 @@ export default function DriverApplicationPage() {
                     setFormData({
                       firstName: "",
                       lastName: "",
+                      dateOfBirth: "",
                       phone: "",
                       email: "",
-                      origin: "",
-                      yearsInUS: "",
-                      drivingExperienceYears: "",
+                      address: "",
+                      professionalDrivingYears: "",
+                      chauffeurExperienceYears: "",
+                      workedForLimoCompany: false,
+                      previousCompanyName: "",
                       licenseNumber: "",
                       licenseState: "FL",
-                      hasChildren: false,
-                      childrenDetails: "",
-                      hasSSN: true,
-                      ssn: "",
-                      notes: ""
+                      licenseExpirationDate: "",
+                      hasChauffeurRegistration: false,
+                      chauffeurRegistrationNumber: "",
+                      chauffeurRegistrationExpirationDate: "",
+                      availability: [],
+                      preferredHours: "Flexible",
+                      languages: ["English"],
+                      otherLanguage: "",
+                      notes: "",
+                      certified: false
                     });
-                    setFrontFile(null);
-                    setFrontPreview(null);
-                    setBackFile(null);
-                    setBackPreview(null);
+                    setLicenseFrontFile(null);
+                    setLicenseFrontPreview(null);
+                    setLicenseBackFile(null);
+                    setLicenseBackPreview(null);
+                    setChauffeurFrontFile(null);
+                    setChauffeurFrontPreview(null);
+                    setChauffeurBackFile(null);
+                    setChauffeurBackPreview(null);
                   }}
                   className="w-full sm:w-auto px-6 py-3 bg-[#f8faf8] hover:bg-gray-100 text-[#444444] border border-gray-200 font-semibold text-xs rounded-xl transition-all"
                 >
-                  Yeni Başvuru Doldur
+                  Submit Another Application
                 </button>
               </div>
             </div>
@@ -298,43 +434,56 @@ export default function DriverApplicationPage() {
                   </div>
                 )}
 
-                {/* Section 1: Kişisel ve İletişim Bilgileri */}
+                {/* 1. PERSONAL INFORMATION */}
                 <div>
                   <h2 className="text-base font-bold text-[#1a3822] pb-3 border-b border-[#e7ede7] mb-5">
-                    Kişisel ve İletişim Bilgileri
+                    1. Personal Information
                   </h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
-                        Adı *
+                        First Name *
                       </label>
                       <input
                         type="text"
                         required
                         value={formData.firstName}
                         onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                        placeholder="Örn: Ahmet"
+                        placeholder="John"
                         className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all"
                       />
                     </div>
 
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
-                        Soyadı *
+                        Last Name *
                       </label>
                       <input
                         type="text"
                         required
                         value={formData.lastName}
                         onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                        placeholder="Örn: Yılmaz"
+                        placeholder="Doe"
                         className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all"
                       />
                     </div>
 
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
-                        Telefon Numarası *
+                        Date of Birth *
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        value={formData.dateOfBirth}
+                        onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                        Phone Number *
                       </label>
                       <input
                         type="tel"
@@ -346,157 +495,111 @@ export default function DriverApplicationPage() {
                       />
                     </div>
 
-                    <div>
+                    <div className="sm:col-span-2">
                       <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
-                        E-posta Adresi
+                        Email Address *
                       </label>
                       <input
                         type="email"
+                        required
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="ornek@gmail.com"
+                        placeholder="john.doe@example.com"
                         className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all"
                       />
                     </div>
 
                     <div className="sm:col-span-2">
                       <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
-                        Nereli Olduğu (Memleket / Şehir / Ülke) *
+                        Current Address *
                       </label>
                       <input
                         type="text"
                         required
-                        value={formData.origin}
-                        onChange={(e) => setFormData({ ...formData, origin: e.target.value })}
-                        placeholder="Örn: İstanbul, Türkiye veya Bakü, Azerbaycan"
+                        value={formData.address}
+                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                        placeholder="Street Address, City, State, ZIP Code"
                         className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Section 2: Amerika ve Şoförlük Deneyimi */}
+                {/* 2. DRIVING EXPERIENCE */}
                 <div>
                   <h2 className="text-base font-bold text-[#1a3822] pb-3 border-b border-[#e7ede7] mb-5">
-                    Amerika ve Şoförlük Deneyimi
-                  </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
-                        Kaç Yıldır Amerika&apos;da Yaşıyorsunuz? *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.yearsInUS}
-                        onChange={(e) => setFormData({ ...formData, yearsInUS: e.target.value })}
-                        placeholder="Örn: 4 yıl"
-                        className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
-                        Kaç Yıldır Şoförlük İşi Yapıyorsunuz? *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.drivingExperienceYears}
-                        onChange={(e) => setFormData({ ...formData, drivingExperienceYears: e.target.value })}
-                        placeholder="Örn: 5 yıl"
-                        className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Section 3: Aile ve Yasal Durum */}
-                <div>
-                  <h2 className="text-base font-bold text-[#1a3822] pb-3 border-b border-[#e7ede7] mb-5">
-                    Aile ve Yasal Durum
+                    2. Driving Experience
                   </h2>
                   <div className="space-y-5">
-                    {/* Çocuk Durumu */}
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
-                        Çocuğunuz Var mı?
-                      </label>
-                      <div className="flex items-center gap-3 mb-3">
-                        <button
-                          type="button"
-                          onClick={() => setFormData({ ...formData, hasChildren: false, childrenDetails: "" })}
-                          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                            !formData.hasChildren
-                              ? "bg-[#285735] text-white shadow-sm"
-                              : "bg-[#f8faf8] text-[#555555] border border-gray-200 hover:bg-gray-100"
-                          }`}
-                        >
-                          Hayır, Yok
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFormData({ ...formData, hasChildren: true })}
-                          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                            formData.hasChildren
-                              ? "bg-[#285735] text-white shadow-sm"
-                              : "bg-[#f8faf8] text-[#555555] border border-gray-200 hover:bg-gray-100"
-                          }`}
-                        >
-                          Evet, Var
-                        </button>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                          How many years of professional driving experience do you have? *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={formData.professionalDrivingYears}
+                          onChange={(e) => setFormData({ ...formData, professionalDrivingYears: e.target.value })}
+                          placeholder="e.g. 5 years"
+                          className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all"
+                        />
                       </div>
 
-                      {formData.hasChildren && (
-                        <div className="mt-2">
-                          <input
-                            type="text"
-                            value={formData.childrenDetails}
-                            onChange={(e) => setFormData({ ...formData, childrenDetails: e.target.value })}
-                            placeholder="Çocuk sayısı veya yaşları (Örn: 2 çocuk, 4 ve 7 yaşlarında)"
-                            className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all"
-                          />
-                        </div>
-                      )}
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                          How many years of chauffeur / limousine driving experience do you have? *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={formData.chauffeurExperienceYears}
+                          onChange={(e) => setFormData({ ...formData, chauffeurExperienceYears: e.target.value })}
+                          placeholder="e.g. 3 years"
+                          className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all"
+                        />
+                      </div>
                     </div>
 
-                    {/* SSN Durumu */}
-                    <div className="pt-2">
+                    <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
-                        SSN (Social Security Number) Var mı?
+                        Have you previously worked for a limousine, black car, executive transportation, or similar company? *
                       </label>
-                      <div className="flex items-center gap-3 mb-3">
+                      <div className="flex items-center gap-3">
                         <button
                           type="button"
-                          onClick={() => setFormData({ ...formData, hasSSN: true })}
+                          onClick={() => setFormData({ ...formData, workedForLimoCompany: true })}
                           className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                            formData.hasSSN
+                            formData.workedForLimoCompany
                               ? "bg-[#285735] text-white shadow-sm"
                               : "bg-[#f8faf8] text-[#555555] border border-gray-200 hover:bg-gray-100"
                           }`}
                         >
-                          Evet, Var
+                          Yes
                         </button>
                         <button
                           type="button"
-                          onClick={() => setFormData({ ...formData, hasSSN: false, ssn: "" })}
+                          onClick={() => setFormData({ ...formData, workedForLimoCompany: false, previousCompanyName: "" })}
                           className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                            !formData.hasSSN
+                            !formData.workedForLimoCompany
                               ? "bg-[#285735] text-white shadow-sm"
                               : "bg-[#f8faf8] text-[#555555] border border-gray-200 hover:bg-gray-100"
                           }`}
                         >
-                          Hayır, Yok
+                          No
                         </button>
                       </div>
 
-                      {formData.hasSSN && (
-                        <div className="mt-2">
+                      {formData.workedForLimoCompany && (
+                        <div className="mt-4">
+                          <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                            Previous Company / Employer Name (Optional)
+                          </label>
                           <input
                             type="text"
-                            value={formData.ssn}
-                            onChange={(e) => setFormData({ ...formData, ssn: e.target.value })}
-                            placeholder="SSN Numarası (Örn: 000-00-0000)"
+                            value={formData.previousCompanyName}
+                            onChange={(e) => setFormData({ ...formData, previousCompanyName: e.target.value })}
+                            placeholder="e.g. Carey Limousine, Empire CLS, etc."
                             className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all"
                           />
                         </div>
@@ -505,29 +608,33 @@ export default function DriverApplicationPage() {
                   </div>
                 </div>
 
-                {/* Section 4: Ehliyet Bilgileri ve Fotoğraf Yükleme */}
+                {/* 3. DRIVER'S LICENSE — REQUIRED */}
                 <div>
-                  <h2 className="text-base font-bold text-[#1a3822] pb-3 border-b border-[#e7ede7] mb-5">
-                    Ehliyet Bilgileri ve Belgeler
+                  <h2 className="text-base font-bold text-[#1a3822] pb-3 border-b border-[#e7ede7] mb-2">
+                    3. Driver&apos;s License — Required
                   </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
-                    <div className="sm:col-span-2">
+                  <p className="text-xs text-[#666666] mb-5">
+                    Please upload clear photos of the front and back of your current driver&apos;s license. Accepted file types: JPG, JPEG, PNG, PDF.
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-5">
+                    <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
-                        Ehliyet Numarası *
+                        Driver&apos;s License Number *
                       </label>
                       <input
                         type="text"
                         required
                         value={formData.licenseNumber}
                         onChange={(e) => setFormData({ ...formData, licenseNumber: e.target.value })}
-                        placeholder="Örn: D123-456-78-900"
+                        placeholder="D123-456-78-900"
                         className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm font-mono transition-all"
                       />
                     </div>
 
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
-                        Verildiği Eyalet *
+                        Issuing State *
                       </label>
                       <select
                         value={formData.licenseState}
@@ -542,32 +649,52 @@ export default function DriverApplicationPage() {
                         <option value="NV">Nevada (NV)</option>
                         <option value="NJ">New Jersey (NJ)</option>
                         <option value="GA">Georgia (GA)</option>
-                        <option value="OTHER">Diğer Eyalet</option>
+                        <option value="OTHER">Other State</option>
                       </select>
                     </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                        Expiration Date *
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        value={formData.licenseExpirationDate}
+                        onChange={(e) => setFormData({ ...formData, licenseExpirationDate: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all cursor-pointer"
+                      />
+                    </div>
                   </div>
 
-                  {/* Fotoğraf Yükleme Alanı */}
+                  {/* License Front & Back Photo Upload */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    {/* Ön Yüz */}
+                    {/* Front */}
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
-                        Ehliyet Ön Yüzü *
+                        Driver&apos;s License Front Photo *
                       </label>
                       <input
-                        ref={frontInputRef}
+                        ref={licenseFrontInputRef}
                         type="file"
-                        accept="image/*"
-                        onChange={handleFrontFileChange}
+                        accept="image/jpeg,image/png,application/pdf"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            const file = e.target.files[0];
+                            setLicenseFrontFile(file);
+                            setLicenseFrontPreview(URL.createObjectURL(file));
+                            setErrorMsg(null);
+                          }
+                        }}
                         className="hidden"
                       />
 
-                      {frontPreview ? (
+                      {licenseFrontPreview ? (
                         <div className="relative rounded-xl border border-gray-200 bg-[#f8faf8] p-3 flex items-center gap-3">
                           <div className="relative w-16 h-12 rounded-lg overflow-hidden shrink-0 border border-gray-200">
                             <Image
-                              src={frontPreview}
-                              alt="Ehliyet Ön Yüz"
+                              src={licenseFrontPreview}
+                              alt="License Front"
                               fill
                               className="object-cover"
                               unoptimized
@@ -575,20 +702,20 @@ export default function DriverApplicationPage() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium text-[#222222] truncate">
-                              {frontFile?.name}
+                              {licenseFrontFile?.name}
                             </p>
                             <p className="text-[11px] text-[#285735] font-semibold flex items-center gap-1 mt-0.5">
-                              <CheckCircle2 className="w-3 h-3" /> Yüklendi
+                              <CheckCircle2 className="w-3 h-3" /> Ready to upload
                             </p>
                           </div>
                           <button
                             type="button"
                             onClick={() => {
-                              setFrontFile(null);
-                              setFrontPreview(null);
+                              setLicenseFrontFile(null);
+                              setLicenseFrontPreview(null);
                             }}
                             className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition-colors"
-                            title="Kaldır"
+                            title="Remove"
                           >
                             <X className="w-4 h-4" />
                           </button>
@@ -596,39 +723,46 @@ export default function DriverApplicationPage() {
                       ) : (
                         <button
                           type="button"
-                          onClick={() => frontInputRef.current?.click()}
+                          onClick={() => licenseFrontInputRef.current?.click()}
                           className="w-full py-6 px-4 rounded-xl border border-dashed border-gray-300 hover:border-[#285735] bg-[#fbfcfb] hover:bg-[#f4f7f4] transition-all flex flex-col items-center justify-center text-center gap-2 group cursor-pointer"
                         >
                           <Camera className="w-6 h-6 text-gray-400 group-hover:text-[#285735] transition-colors" />
                           <span className="text-xs font-semibold text-[#444444] group-hover:text-[#1a3822]">
-                            Ön Yüz Fotoğrafı Seç
+                            Upload Front Photo *
                           </span>
                           <span className="text-[11px] text-gray-400">
-                            JPG, PNG veya PDF
+                            JPG, JPEG, PNG, or PDF
                           </span>
                         </button>
                       )}
                     </div>
 
-                    {/* Arka Yüz */}
+                    {/* Back */}
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
-                        Ehliyet Arka Yüzü *
+                        Driver&apos;s License Back Photo *
                       </label>
                       <input
-                        ref={backInputRef}
+                        ref={licenseBackInputRef}
                         type="file"
-                        accept="image/*"
-                        onChange={handleBackFileChange}
+                        accept="image/jpeg,image/png,application/pdf"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            const file = e.target.files[0];
+                            setLicenseBackFile(file);
+                            setLicenseBackPreview(URL.createObjectURL(file));
+                            setErrorMsg(null);
+                          }
+                        }}
                         className="hidden"
                       />
 
-                      {backPreview ? (
+                      {licenseBackPreview ? (
                         <div className="relative rounded-xl border border-gray-200 bg-[#f8faf8] p-3 flex items-center gap-3">
                           <div className="relative w-16 h-12 rounded-lg overflow-hidden shrink-0 border border-gray-200">
                             <Image
-                              src={backPreview}
-                              alt="Ehliyet Arka Yüz"
+                              src={licenseBackPreview}
+                              alt="License Back"
                               fill
                               className="object-cover"
                               unoptimized
@@ -636,20 +770,20 @@ export default function DriverApplicationPage() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium text-[#222222] truncate">
-                              {backFile?.name}
+                              {licenseBackFile?.name}
                             </p>
                             <p className="text-[11px] text-[#285735] font-semibold flex items-center gap-1 mt-0.5">
-                              <CheckCircle2 className="w-3 h-3" /> Yüklendi
+                              <CheckCircle2 className="w-3 h-3" /> Ready to upload
                             </p>
                           </div>
                           <button
                             type="button"
                             onClick={() => {
-                              setBackFile(null);
-                              setBackPreview(null);
+                              setLicenseBackFile(null);
+                              setLicenseBackPreview(null);
                             }}
                             className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition-colors"
-                            title="Kaldır"
+                            title="Remove"
                           >
                             <X className="w-4 h-4" />
                           </button>
@@ -657,15 +791,15 @@ export default function DriverApplicationPage() {
                       ) : (
                         <button
                           type="button"
-                          onClick={() => backInputRef.current?.click()}
+                          onClick={() => licenseBackInputRef.current?.click()}
                           className="w-full py-6 px-4 rounded-xl border border-dashed border-gray-300 hover:border-[#285735] bg-[#fbfcfb] hover:bg-[#f4f7f4] transition-all flex flex-col items-center justify-center text-center gap-2 group cursor-pointer"
                         >
                           <Camera className="w-6 h-6 text-gray-400 group-hover:text-[#285735] transition-colors" />
                           <span className="text-xs font-semibold text-[#444444] group-hover:text-[#1a3822]">
-                            Arka Yüz Fotoğrafı Seç
+                            Upload Back Photo *
                           </span>
                           <span className="text-[11px] text-gray-400">
-                            JPG, PNG veya PDF
+                            JPG, JPEG, PNG, or PDF
                           </span>
                         </button>
                       )}
@@ -673,44 +807,376 @@ export default function DriverApplicationPage() {
                   </div>
                 </div>
 
-                {/* Section 5: Ek Notlar */}
+                {/* 4. CHAUFFEUR REGISTRATION — OPTIONAL */}
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
-                    Ek Notlar veya Belirtmek İstedikleriniz (Opsiyonel)
-                  </label>
-                  <textarea
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    rows={3}
-                    placeholder="Kullandığınız araç modelleri, müsaitlik saatleriniz veya eklemek istediğiniz diğer detaylar..."
-                    className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all resize-y"
-                  />
-                </div>
-
-                {/* Submit Button & Progress */}
-                <div className="pt-4 border-t border-[#e7ede7] flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <p className="text-xs text-[#666666]">
-                    * İşaretli alanların doldurulması zorunludur.
+                  <h2 className="text-base font-bold text-[#1a3822] pb-3 border-b border-[#e7ede7] mb-2">
+                    4. Chauffeur Registration — Optional
+                  </h2>
+                  <p className="text-xs text-[#666666] mb-4">
+                    If you currently have a Chauffeur Registration, please provide the information and upload clear photos of the document.
                   </p>
 
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full sm:w-auto px-8 py-3.5 bg-[#285735] hover:bg-[#1f4429] text-white font-bold text-sm rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        <span>{uploadProgress || "Gönderiliyor..."}</span>
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4" />
-                        <span>Başvuruyu Gönder</span>
-                      </>
-                    )}
-                  </button>
+                  <div className="mb-5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                      Do you currently have a Chauffeur Registration?
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, hasChauffeurRegistration: true })}
+                        className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                          formData.hasChauffeurRegistration
+                            ? "bg-[#285735] text-white shadow-sm"
+                            : "bg-[#f8faf8] text-[#555555] border border-gray-200 hover:bg-gray-100"
+                        }`}
+                      >
+                        Yes
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData({ 
+                            ...formData, 
+                            hasChauffeurRegistration: false,
+                            chauffeurRegistrationNumber: "",
+                            chauffeurRegistrationExpirationDate: ""
+                          });
+                          setChauffeurFrontFile(null);
+                          setChauffeurFrontPreview(null);
+                          setChauffeurBackFile(null);
+                          setChauffeurBackPreview(null);
+                        }}
+                        className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                          !formData.hasChauffeurRegistration
+                            ? "bg-[#285735] text-white shadow-sm"
+                            : "bg-[#f8faf8] text-[#555555] border border-gray-200 hover:bg-gray-100"
+                        }`}
+                      >
+                        No
+                      </button>
+                    </div>
+                  </div>
+
+                  {formData.hasChauffeurRegistration && (
+                    <div className="space-y-5 p-5 bg-[#f8faf8] rounded-xl border border-gray-200 animate-in fade-in duration-200">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div>
+                          <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                            Chauffeur Registration Number (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.chauffeurRegistrationNumber}
+                            onChange={(e) => setFormData({ ...formData, chauffeurRegistrationNumber: e.target.value })}
+                            placeholder="e.g. CR-987654"
+                            className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] text-sm font-mono transition-all"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                            Expiration Date (Optional)
+                          </label>
+                          <input
+                            type="date"
+                            value={formData.chauffeurRegistrationExpirationDate}
+                            onChange={(e) => setFormData({ ...formData, chauffeurRegistrationExpirationDate: e.target.value })}
+                            className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-[#222222] focus:outline-none focus:border-[#285735] text-sm transition-all cursor-pointer"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Chauffeur Photo Upload */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
+                        {/* Front */}
+                        <div>
+                          <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                            Chauffeur Registration Front Photo (Optional)
+                          </label>
+                          <input
+                            ref={chauffeurFrontInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,application/pdf"
+                            onChange={(e) => {
+                              if (e.target.files && e.target.files[0]) {
+                                const file = e.target.files[0];
+                                setChauffeurFrontFile(file);
+                                setChauffeurFrontPreview(URL.createObjectURL(file));
+                              }
+                            }}
+                            className="hidden"
+                          />
+
+                          {chauffeurFrontPreview ? (
+                            <div className="relative rounded-xl border border-gray-200 bg-white p-3 flex items-center gap-3">
+                              <div className="relative w-16 h-12 rounded-lg overflow-hidden shrink-0 border border-gray-200">
+                                <Image
+                                  src={chauffeurFrontPreview}
+                                  alt="Registration Front"
+                                  fill
+                                  className="object-cover"
+                                  unoptimized
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-[#222222] truncate">
+                                  {chauffeurFrontFile?.name}
+                                </p>
+                                <p className="text-[11px] text-[#285735] font-semibold flex items-center gap-1 mt-0.5">
+                                  <CheckCircle2 className="w-3 h-3" /> Attached
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setChauffeurFrontFile(null);
+                                  setChauffeurFrontPreview(null);
+                                }}
+                                className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition-colors"
+                                title="Remove"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => chauffeurFrontInputRef.current?.click()}
+                              className="w-full py-5 px-4 rounded-xl border border-dashed border-gray-300 hover:border-[#285735] bg-white hover:bg-gray-50 transition-all flex flex-col items-center justify-center text-center gap-1.5 cursor-pointer"
+                            >
+                              <Camera className="w-5 h-5 text-gray-400" />
+                              <span className="text-xs font-semibold text-[#444444]">
+                                Upload Front Photo
+                              </span>
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Back */}
+                        <div>
+                          <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                            Chauffeur Registration Back Photo (Optional)
+                          </label>
+                          <input
+                            ref={chauffeurBackInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,application/pdf"
+                            onChange={(e) => {
+                              if (e.target.files && e.target.files[0]) {
+                                const file = e.target.files[0];
+                                setChauffeurBackFile(file);
+                                setChauffeurBackPreview(URL.createObjectURL(file));
+                              }
+                            }}
+                            className="hidden"
+                          />
+
+                          {chauffeurBackPreview ? (
+                            <div className="relative rounded-xl border border-gray-200 bg-white p-3 flex items-center gap-3">
+                              <div className="relative w-16 h-12 rounded-lg overflow-hidden shrink-0 border border-gray-200">
+                                <Image
+                                  src={chauffeurBackPreview}
+                                  alt="Registration Back"
+                                  fill
+                                  className="object-cover"
+                                  unoptimized
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-[#222222] truncate">
+                                  {chauffeurBackFile?.name}
+                                </p>
+                                <p className="text-[11px] text-[#285735] font-semibold flex items-center gap-1 mt-0.5">
+                                  <CheckCircle2 className="w-3 h-3" /> Attached
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setChauffeurBackFile(null);
+                                  setChauffeurBackPreview(null);
+                                }}
+                                className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition-colors"
+                                title="Remove"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => chauffeurBackInputRef.current?.click()}
+                              className="w-full py-5 px-4 rounded-xl border border-dashed border-gray-300 hover:border-[#285735] bg-white hover:bg-gray-50 transition-all flex flex-col items-center justify-center text-center gap-1.5 cursor-pointer"
+                            >
+                              <Camera className="w-5 h-5 text-gray-400" />
+                              <span className="text-xs font-semibold text-[#444444]">
+                                Upload Back Photo
+                              </span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
+
+                {/* 5. AVAILABILITY */}
+                <div>
+                  <h2 className="text-base font-bold text-[#1a3822] pb-3 border-b border-[#e7ede7] mb-5">
+                    5. Availability
+                  </h2>
+                  <div className="space-y-5">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                        When are you available to work? (Select all that apply)
+                      </label>
+                      <div className="flex flex-wrap gap-2.5">
+                        {availabilityOptions.map((opt) => {
+                          const isSelected = formData.availability.includes(opt);
+                          return (
+                            <button
+                              key={opt}
+                              type="button"
+                              onClick={() => toggleAvailability(opt)}
+                              className={`px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all ${
+                                isSelected
+                                  ? "bg-[#285735] text-white border-[#285735] shadow-sm"
+                                  : "bg-[#f8faf8] text-[#555555] border-gray-200 hover:bg-gray-100"
+                              }`}
+                            >
+                              {opt}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                        Preferred Working Hours
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {preferredHoursOptions.map((hr) => {
+                          const isSelected = formData.preferredHours === hr;
+                          return (
+                            <button
+                              key={hr}
+                              type="button"
+                              onClick={() => setFormData({ ...formData, preferredHours: hr })}
+                              className={`px-4 py-2.5 rounded-xl text-xs font-semibold border text-center transition-all ${
+                                isSelected
+                                  ? "bg-[#285735] text-white border-[#285735] shadow-sm"
+                                  : "bg-[#f8faf8] text-[#555555] border-gray-200 hover:bg-gray-100"
+                              }`}
+                            >
+                              {hr}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 6. LANGUAGES */}
+                <div>
+                  <h2 className="text-base font-bold text-[#1a3822] pb-3 border-b border-[#e7ede7] mb-5">
+                    6. Languages
+                  </h2>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                      Languages Spoken (Select all that apply)
+                    </label>
+                    <div className="flex flex-wrap gap-2.5 mb-3">
+                      {languageOptions.map((lang) => {
+                        const isSelected = formData.languages.includes(lang);
+                        return (
+                          <button
+                            key={lang}
+                            type="button"
+                            onClick={() => toggleLanguage(lang)}
+                            className={`px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all ${
+                              isSelected
+                                ? "bg-[#285735] text-white border-[#285735] shadow-sm"
+                                : "bg-[#f8faf8] text-[#555555] border-gray-200 hover:bg-gray-100"
+                            }`}
+                          >
+                            {lang}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <input
+                      type="text"
+                      value={formData.otherLanguage}
+                      onChange={(e) => setFormData({ ...formData, otherLanguage: e.target.value })}
+                      placeholder="Other language(s)... (Optional)"
+                      className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* 7. ADDITIONAL INFORMATION */}
+                <div>
+                  <h2 className="text-base font-bold text-[#1a3822] pb-3 border-b border-[#e7ede7] mb-5">
+                    7. Additional Information
+                  </h2>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                      Additional Information / Notes (Optional)
+                    </label>
+                    <textarea
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      rows={3}
+                      placeholder="Vehicle experience (Escalade, S-Class, Sprinter), airport/FBO familiarity, or any additional qualifications..."
+                      className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all resize-y"
+                    />
+                  </div>
+                </div>
+
+                {/* 8. APPLICANT CERTIFICATION / SUBMIT */}
+                <div className="pt-6 border-t border-[#e7ede7] space-y-6">
+                  <div className="p-4 rounded-xl bg-[#f8faf8] border border-gray-200 flex items-start space-x-3">
+                    <input
+                      type="checkbox"
+                      id="certified"
+                      required
+                      checked={formData.certified}
+                      onChange={(e) => setFormData({ ...formData, certified: e.target.checked })}
+                      className="mt-1 w-4 h-4 text-[#285735] rounded border-gray-300 focus:ring-[#285735] cursor-pointer"
+                    />
+                    <label htmlFor="certified" className="text-xs text-[#444444] leading-relaxed cursor-pointer select-none">
+                      I certify that the information provided in this application is accurate and complete. I understand that the company may review the information and documents I provide as part of the driver application and qualification process. *
+                    </label>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <p className="text-xs text-[#666666]">
+                      * Required fields must be completed.
+                    </p>
+
+                    <button
+                      type="submit"
+                      disabled={isSubmitting || !formData.certified}
+                      className="w-full sm:w-auto px-8 py-3.5 bg-[#285735] hover:bg-[#1f4429] text-white font-bold text-sm rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>{uploadProgress || "Submitting..."}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />
+                          <span>Submit Application</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
               </form>
             </div>
           )}

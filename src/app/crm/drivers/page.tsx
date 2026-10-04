@@ -109,10 +109,10 @@ export default function CRMDriverListPage() {
       // Search query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const fullName = `${d.firstName} ${d.lastName}`.toLowerCase();
-        const phone = d.phone.toLowerCase();
-        const origin = d.origin.toLowerCase();
-        const lic = d.licenseNumber.toLowerCase();
+        const fullName = `${d.firstName || ""} ${d.lastName || ""}`.toLowerCase();
+        const phone = (d.phone || "").toLowerCase();
+        const origin = (d.origin || d.address || "").toLowerCase();
+        const lic = (d.licenseNumber || "").toLowerCase();
         const email = (d.email || "").toLowerCase();
 
         return (
@@ -348,9 +348,9 @@ export default function CRMDriverListPage() {
                             <div className="text-xs sm:text-sm font-bold group-hover:underline">
                               {driver.firstName} {driver.lastName}
                             </div>
-                            <div className="text-[11px] text-gray-400 font-normal flex items-center mt-0.5">
-                              <MapPin className="w-3 h-3 mr-1 text-gray-400" />
-                              {driver.origin}
+                            <div className="text-[11px] text-gray-400 font-normal flex items-center mt-0.5 truncate max-w-[180px]">
+                              <MapPin className="w-3 h-3 mr-1 text-gray-400 shrink-0" />
+                              <span className="truncate">{driver.address || driver.origin || "-"}</span>
                             </div>
                           </div>
                         </Link>
@@ -380,10 +380,10 @@ export default function CRMDriverListPage() {
                       {/* Experience */}
                       <td className="py-3.5 px-4">
                         <div className="font-semibold text-gray-800">
-                          {driver.drivingExperienceYears} Yıl Şoförlük
+                          {driver.professionalDrivingYears || driver.drivingExperienceYears || "-"} Yıl Sürüş
                         </div>
                         <div className="text-[11px] text-gray-400">
-                          {driver.yearsInUS} Yıl ABD&apos;de
+                          {driver.chauffeurExperienceYears ? `${driver.chauffeurExperienceYears} Yıl Chauffeur` : (driver.yearsInUS ? `${driver.yearsInUS} Yıl ABD` : "-")}
                         </div>
                       </td>
 
@@ -393,33 +393,48 @@ export default function CRMDriverListPage() {
                           {driver.licenseNumber}
                         </div>
                         <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[10px] font-bold bg-gray-100 text-gray-600">
-                          {driver.licenseState || "FL"}
+                          {driver.licenseState || "FL"} {driver.licenseExpirationDate ? `• Exp: ${driver.licenseExpirationDate}` : ""}
                         </span>
                       </td>
 
-                      {/* Family & SSN */}
+                      {/* Registration & Status */}
                       <td className="py-3.5 px-4">
                         <div className="space-y-1">
-                          <span
-                            className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
-                              driver.hasChildren
-                                ? "bg-purple-50 text-purple-700 border border-purple-200"
-                                : "bg-gray-100 text-gray-500"
-                            }`}
-                          >
-                            {driver.hasChildren ? "Çocuklu" : "Çocuksuz"}
-                          </span>
-                          <div>
+                          {driver.hasChauffeurRegistration !== undefined ? (
                             <span
                               className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
-                                driver.hasSSN
+                                driver.hasChauffeurRegistration
                                   ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                  : "bg-amber-50 text-amber-700 border border-amber-200"
+                                  : "bg-gray-100 text-gray-500"
                               }`}
                             >
-                              {driver.hasSSN ? "SSN Mevcut" : "SSN Yok"}
+                              {driver.hasChauffeurRegistration ? "Chauffeur Reg: Var" : "Chauffeur Reg: Yok"}
                             </span>
-                          </div>
+                          ) : (
+                            <span
+                              className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                                driver.hasChildren
+                                  ? "bg-purple-50 text-purple-700 border border-purple-200"
+                                  : "bg-gray-100 text-gray-500"
+                              }`}
+                            >
+                              {driver.hasChildren ? "Çocuklu" : "Çocuksuz"}
+                            </span>
+                          )}
+
+                          {driver.workedForLimoCompany !== undefined && (
+                            <div>
+                              <span
+                                className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                                  driver.workedForLimoCompany
+                                    ? "bg-blue-50 text-blue-700 border border-blue-200"
+                                    : "bg-gray-100 text-gray-500"
+                                }`}
+                              >
+                                {driver.workedForLimoCompany ? "Limo Deneyimli" : "Limo Yeni"}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </td>
 

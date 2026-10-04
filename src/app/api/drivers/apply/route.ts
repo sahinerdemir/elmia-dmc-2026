@@ -9,22 +9,33 @@ export async function POST(req: NextRequest) {
     const {
       firstName,
       lastName,
+      dateOfBirth,
       phone,
-      email = "",
-      origin,
-      yearsInUS,
-      drivingExperienceYears,
+      email,
+      address,
+      professionalDrivingYears,
+      chauffeurExperienceYears,
+      workedForLimoCompany = false,
+      previousCompanyName = "",
       licenseNumber,
       licenseState = "FL",
-      hasChildren = false,
-      childrenDetails = "",
-      hasSSN = false,
-      ssn = "",
+      licenseExpirationDate,
       licenseFrontUrl,
       licenseBackUrl,
+      hasChauffeurRegistration = false,
+      chauffeurRegistrationNumber = "",
+      chauffeurRegistrationExpirationDate = "",
+      chauffeurRegistrationFrontUrl = "",
+      chauffeurRegistrationBackUrl = "",
+      availability = [],
+      preferredHours = "Flexible",
+      languages = [],
       notes = "",
-      languages = "",
-      vehicleExperience = "",
+      certified = false,
+      // Legacy fields if passed
+      origin = "",
+      yearsInUS = "",
+      drivingExperienceYears = "",
       hp_fax_number = "",
       _ts
     } = body;
@@ -64,49 +75,106 @@ export async function POST(req: NextRequest) {
     // Required Field Validations
     if (!firstName || !firstName.trim()) {
       return NextResponse.json(
-        { success: false, error: "First name is required." },
+        { success: false, error: "First Name is required." },
         { status: 400 }
       );
     }
 
     if (!lastName || !lastName.trim()) {
       return NextResponse.json(
-        { success: false, error: "Last name is required." },
+        { success: false, error: "Last Name is required." },
+        { status: 400 }
+      );
+    }
+
+    if (!dateOfBirth || !dateOfBirth.trim()) {
+      return NextResponse.json(
+        { success: false, error: "Date of Birth is required." },
         { status: 400 }
       );
     }
 
     if (!phone || !phone.trim()) {
       return NextResponse.json(
-        { success: false, error: "Phone number is required." },
+        { success: false, error: "Phone Number is required." },
         { status: 400 }
       );
     }
 
-    if (!origin || !origin.trim()) {
+    if (!email || !email.trim()) {
       return NextResponse.json(
-        { success: false, error: "Hometown / Country of origin is required." },
+        { success: false, error: "Email Address is required." },
+        { status: 400 }
+      );
+    }
+
+    if (!address || !address.trim()) {
+      return NextResponse.json(
+        { success: false, error: "Current Address is required." },
+        { status: 400 }
+      );
+    }
+
+    if (
+      professionalDrivingYears === undefined ||
+      professionalDrivingYears === null ||
+      !String(professionalDrivingYears).trim()
+    ) {
+      return NextResponse.json(
+        { success: false, error: "Years of professional driving experience is required." },
+        { status: 400 }
+      );
+    }
+
+    if (
+      chauffeurExperienceYears === undefined ||
+      chauffeurExperienceYears === null ||
+      !String(chauffeurExperienceYears).trim()
+    ) {
+      return NextResponse.json(
+        { success: false, error: "Years of chauffeur / limousine driving experience is required." },
         { status: 400 }
       );
     }
 
     if (!licenseNumber || !licenseNumber.trim()) {
       return NextResponse.json(
-        { success: false, error: "Driver's license number is required." },
+        { success: false, error: "Driver's License Number is required." },
+        { status: 400 }
+      );
+    }
+
+    if (!licenseState || !licenseState.trim()) {
+      return NextResponse.json(
+        { success: false, error: "Issuing State is required." },
+        { status: 400 }
+      );
+    }
+
+    if (!licenseExpirationDate || !licenseExpirationDate.trim()) {
+      return NextResponse.json(
+        { success: false, error: "Driver's License Expiration Date is required." },
         { status: 400 }
       );
     }
 
     if (!licenseFrontUrl || !licenseFrontUrl.trim()) {
       return NextResponse.json(
-        { success: false, error: "Front driver's license document is required." },
+        { success: false, error: "Driver's License Front Photo is required." },
         { status: 400 }
       );
     }
 
     if (!licenseBackUrl || !licenseBackUrl.trim()) {
       return NextResponse.json(
-        { success: false, error: "Back driver's license document is required." },
+        { success: false, error: "Driver's License Back Photo is required." },
+        { status: 400 }
+      );
+    }
+
+    if (!certified) {
+      return NextResponse.json(
+        { success: false, error: "Applicant certification is required before submission." },
         { status: 400 }
       );
     }
@@ -115,22 +183,35 @@ export async function POST(req: NextRequest) {
     const newDriver = await addDriverApplication({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
+      dateOfBirth: dateOfBirth.trim(),
       phone: phone.trim(),
       email: email.trim(),
-      origin: origin.trim(),
-      yearsInUS: String(yearsInUS || "").trim(),
-      drivingExperienceYears: String(drivingExperienceYears || "").trim(),
-      licenseNumber: licenseNumber.trim(),
+      address: address.trim(),
+      professionalDrivingYears: String(professionalDrivingYears).trim(),
+      chauffeurExperienceYears: String(chauffeurExperienceYears).trim(),
+      workedForLimoCompany: Boolean(workedForLimoCompany),
+      previousCompanyName: previousCompanyName ? previousCompanyName.trim() : undefined,
+      licenseNumber: licenseNumber.trim().toUpperCase(),
       licenseState: String(licenseState || "FL").trim().toUpperCase(),
-      hasChildren: Boolean(hasChildren),
-      childrenDetails: childrenDetails.trim() || undefined,
-      hasSSN: Boolean(hasSSN),
-      ssn: ssn.trim() || undefined,
+      licenseExpirationDate: licenseExpirationDate.trim(),
       licenseFrontUrl: licenseFrontUrl.trim(),
       licenseBackUrl: licenseBackUrl.trim(),
-      notes: notes.trim() || undefined,
-      languages: languages.trim() || undefined,
-      vehicleExperience: vehicleExperience.trim() || undefined
+      hasChauffeurRegistration: Boolean(hasChauffeurRegistration),
+      chauffeurRegistrationNumber: hasChauffeurRegistration && chauffeurRegistrationNumber ? chauffeurRegistrationNumber.trim() : undefined,
+      chauffeurRegistrationExpirationDate: hasChauffeurRegistration && chauffeurRegistrationExpirationDate ? chauffeurRegistrationExpirationDate.trim() : undefined,
+      chauffeurRegistrationFrontUrl: hasChauffeurRegistration && chauffeurRegistrationFrontUrl ? chauffeurRegistrationFrontUrl.trim() : undefined,
+      chauffeurRegistrationBackUrl: hasChauffeurRegistration && chauffeurRegistrationBackUrl ? chauffeurRegistrationBackUrl.trim() : undefined,
+      availability: Array.isArray(availability) ? availability : [],
+      preferredHours: String(preferredHours || "Flexible").trim(),
+      languages: Array.isArray(languages) ? languages : (languages ? [String(languages)] : ["English"]),
+      notes: notes ? notes.trim() : undefined,
+      certified: Boolean(certified),
+      // Legacy compatibility mapping
+      origin: origin ? origin.trim() : "Not collected",
+      yearsInUS: yearsInUS ? String(yearsInUS).trim() : "-",
+      drivingExperienceYears: professionalDrivingYears ? String(professionalDrivingYears).trim() : (drivingExperienceYears || "-"),
+      hasChildren: false,
+      hasSSN: false
     });
 
     // Notify company desk via Resend
