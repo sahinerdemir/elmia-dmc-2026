@@ -55,28 +55,63 @@ export default function DriverApplicationPage() {
     certified: false
   });
 
-  // License photos (Required)
+  // License photos (Required: Front and Back)
   const [licenseFrontFile, setLicenseFrontFile] = useState<File | null>(null);
   const [licenseFrontPreview, setLicenseFrontPreview] = useState<string | null>(null);
   const [licenseBackFile, setLicenseBackFile] = useState<File | null>(null);
   const [licenseBackPreview, setLicenseBackPreview] = useState<string | null>(null);
 
-  // Chauffeur Registration photos (Optional)
-  const [chauffeurFrontFile, setChauffeurFrontFile] = useState<File | null>(null);
-  const [chauffeurFrontPreview, setChauffeurFrontPreview] = useState<string | null>(null);
-  const [chauffeurBackFile, setChauffeurBackFile] = useState<File | null>(null);
-  const [chauffeurBackPreview, setChauffeurBackPreview] = useState<string | null>(null);
+  // Chauffeur Registration photo (Single photo showing registration number)
+  const [chauffeurFile, setChauffeurFile] = useState<File | null>(null);
+  const [chauffeurPreview, setChauffeurPreview] = useState<string | null>(null);
 
   const licenseFrontInputRef = useRef<HTMLInputElement>(null);
   const licenseBackInputRef = useRef<HTMLInputElement>(null);
-  const chauffeurFrontInputRef = useRef<HTMLInputElement>(null);
-  const chauffeurBackInputRef = useRef<HTMLInputElement>(null);
+  const chauffeurInputRef = useRef<HTMLInputElement>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [createdDriverId, setCreatedDriverId] = useState<string>("");
+
+  // Allowed file extensions & MIME types (Strict: JPG, PNG, PDF)
+  const ALLOWED_EXTS = ["jpg", "jpeg", "png", "pdf"];
+  const ALLOWED_MIMES = ["image/jpeg", "image/png", "application/pdf"];
+
+  const validateFile = (file: File): boolean => {
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+    if (!ALLOWED_EXTS.includes(ext) && !ALLOWED_MIMES.includes(file.type)) {
+      setErrorMsg("Invalid file format. Only JPG, PNG, and PDF files are accepted.");
+      return false;
+    }
+    const MAX_SIZE = 12 * 1024 * 1024; // 12MB
+    if (file.size > MAX_SIZE) {
+      setErrorMsg("File exceeds the 12MB size limit.");
+      return false;
+    }
+    return true;
+  };
+
+  // US Phone Number Masking (e.g. (305) 555-0199)
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+    let formatted = "";
+    if (digits.length === 0) {
+      formatted = "";
+    } else if (digits.length <= 3) {
+      formatted = `(${digits}`;
+    } else if (digits.length <= 6) {
+      formatted = `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    } else {
+      formatted = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+    }
+
+    setFormData((prev) => ({ ...prev, phone: formatted }));
+    if (errorMsg && digits.length === 10) {
+      setErrorMsg(null);
+    }
+  };
 
   // Helpers for multi-select
   const toggleAvailability = (option: string) => {
@@ -114,7 +149,8 @@ export default function DriverApplicationPage() {
     });
 
     if (!res.ok) {
-      throw new Error(`Failed to upload ${file.name}.`);
+      const errData = await res.json().catch(() => null);
+      throw new Error(errData?.error || `Failed to upload ${file.name}.`);
     }
 
     const json = await res.json();
@@ -140,13 +176,30 @@ export default function DriverApplicationPage() {
       return;
     }
 
-    if (!formData.phone.trim()) {
-      setErrorMsg("Please enter a valid phone number.");
+    // Age validation (minimum 21 years old)
+    const dob = new Date(formData.dateOfBirth);
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+      age--;
+    }
+    if (isNaN(dob.getTime()) || age < 21 || age > 95) {
+      setErrorMsg("Applicant must be at least 21 years of age for chauffeur qualification.");
       return;
     }
 
-    if (!formData.email.trim()) {
-      setErrorMsg("Please enter a valid email address.");
+    // Phone validation (10 digits)
+    const cleanPhone = formData.phone.replace(/\D/g, "");
+    if (cleanPhone.length !== 10) {
+      setErrorMsg("Please enter a complete 10-digit phone number (e.g. (555) 000-0000).");
+      return;
+    }
+
+    // Email validation (must contain @ and valid domain)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim() || !emailRegex.test(formData.email.trim())) {
+      setErrorMsg("Please enter a valid email address (e.g. name@domain.com).");
       return;
     }
 
@@ -208,19 +261,11 @@ export default function DriverApplicationPage() {
       setUploadProgress("Uploading driver's license (back)...");
       const licenseBackUrl = await handleFileUpload(licenseBackFile, "license-back");
 
-      // Upload Optional Chauffeur Registration Files (if provided)
-      let chauffeurFrontUrl = "";
-      let chauffeurBackUrl = "";
-
-      if (formData.hasChauffeurRegistration) {
-        if (chauffeurFrontFile) {
-          setUploadProgress("Uploading chauffeur registration (front)...");
-          chauffeurFrontUrl = await handleFileUpload(chauffeurFrontFile, "chauffeur-front");
-        }
-        if (chauffeurBackFile) {
-          setUploadProgress("Uploading chauffeur registration (back)...");
-          chauffeurBackUrl = await handleFileUpload(chauffeurBackFile, "chauffeur-back");
-        }
+      // Upload Optional Chauffeur Registration Photo (if provided)
+      let chauffeurPhotoUrl = "";
+      if (formData.hasChauffeurRegistration && chauffeurFile) {
+        setUploadProgress("Uploading chauffeur registration photo...");
+        chauffeurPhotoUrl = await handleFileUpload(chauffeurFile, "chauffeur-reg");
       }
 
       // Compile Languages list
@@ -253,8 +298,7 @@ export default function DriverApplicationPage() {
         hasChauffeurRegistration: Boolean(formData.hasChauffeurRegistration),
         chauffeurRegistrationNumber: formData.hasChauffeurRegistration ? formData.chauffeurRegistrationNumber.trim() : undefined,
         chauffeurRegistrationExpirationDate: formData.hasChauffeurRegistration ? formData.chauffeurRegistrationExpirationDate.trim() : undefined,
-        chauffeurRegistrationFrontUrl: chauffeurFrontUrl || undefined,
-        chauffeurRegistrationBackUrl: chauffeurBackUrl || undefined,
+        chauffeurRegistrationPhotoUrl: chauffeurPhotoUrl || undefined,
 
         availability: formData.availability,
         preferredHours: formData.preferredHours,
@@ -411,10 +455,8 @@ export default function DriverApplicationPage() {
                     setLicenseFrontPreview(null);
                     setLicenseBackFile(null);
                     setLicenseBackPreview(null);
-                    setChauffeurFrontFile(null);
-                    setChauffeurFrontPreview(null);
-                    setChauffeurBackFile(null);
-                    setChauffeurBackPreview(null);
+                    setChauffeurFile(null);
+                    setChauffeurPreview(null);
                   }}
                   className="w-full sm:w-auto px-6 py-3 bg-[#f8faf8] hover:bg-gray-100 text-[#444444] border border-gray-200 font-semibold text-xs rounded-xl transition-all"
                 >
@@ -489,9 +531,10 @@ export default function DriverApplicationPage() {
                         type="tel"
                         required
                         value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="+1 (555) 000-0000"
-                        className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all"
+                        onChange={handlePhoneChange}
+                        placeholder="(555) 000-0000"
+                        maxLength={14}
+                        className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm font-mono transition-all"
                       />
                     </div>
 
@@ -504,7 +547,7 @@ export default function DriverApplicationPage() {
                         required
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="john.doe@example.com"
+                        placeholder="name@domain.com"
                         className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all"
                       />
                     </div>
@@ -569,7 +612,7 @@ export default function DriverApplicationPage() {
                         <button
                           type="button"
                           onClick={() => setFormData({ ...formData, workedForLimoCompany: true })}
-                          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                             formData.workedForLimoCompany
                               ? "bg-[#285735] text-white shadow-sm"
                               : "bg-[#f8faf8] text-[#555555] border border-gray-200 hover:bg-gray-100"
@@ -580,7 +623,7 @@ export default function DriverApplicationPage() {
                         <button
                           type="button"
                           onClick={() => setFormData({ ...formData, workedForLimoCompany: false, previousCompanyName: "" })}
-                          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                             !formData.workedForLimoCompany
                               ? "bg-[#285735] text-white shadow-sm"
                               : "bg-[#f8faf8] text-[#555555] border border-gray-200 hover:bg-gray-100"
@@ -593,7 +636,7 @@ export default function DriverApplicationPage() {
                       {formData.workedForLimoCompany && (
                         <div className="mt-4">
                           <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
-                            Previous Company / Employer Name (Optional)
+                            Previous Company / Employer Name
                           </label>
                           <input
                             type="text"
@@ -614,7 +657,7 @@ export default function DriverApplicationPage() {
                     3. Driver&apos;s License — Required
                   </h2>
                   <p className="text-xs text-[#666666] mb-5">
-                    Please upload clear photos of the front and back of your current driver&apos;s license. Accepted file types: JPG, JPEG, PNG, PDF.
+                    Please upload clear photos of the front and back of your current driver&apos;s license. (Accepted formats: JPG, PNG, PDF)
                   </p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-5">
@@ -677,32 +720,40 @@ export default function DriverApplicationPage() {
                       <input
                         ref={licenseFrontInputRef}
                         type="file"
-                        accept="image/jpeg,image/png,application/pdf"
+                        accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
                         onChange={(e) => {
                           if (e.target.files && e.target.files[0]) {
                             const file = e.target.files[0];
-                            setLicenseFrontFile(file);
-                            setLicenseFrontPreview(URL.createObjectURL(file));
-                            setErrorMsg(null);
+                            if (validateFile(file)) {
+                              setLicenseFrontFile(file);
+                              setLicenseFrontPreview(file.type.startsWith("image/") ? URL.createObjectURL(file) : null);
+                              setErrorMsg(null);
+                            } else {
+                              e.target.value = "";
+                            }
                           }
                         }}
                         className="hidden"
                       />
 
-                      {licenseFrontPreview ? (
+                      {licenseFrontFile ? (
                         <div className="relative rounded-xl border border-gray-200 bg-[#f8faf8] p-3 flex items-center gap-3">
-                          <div className="relative w-16 h-12 rounded-lg overflow-hidden shrink-0 border border-gray-200">
-                            <Image
-                              src={licenseFrontPreview}
-                              alt="License Front"
-                              fill
-                              className="object-cover"
-                              unoptimized
-                            />
+                          <div className="relative w-16 h-12 rounded-lg overflow-hidden shrink-0 border border-gray-200 bg-white flex items-center justify-center">
+                            {licenseFrontPreview ? (
+                              <Image
+                                src={licenseFrontPreview}
+                                alt="License Front"
+                                fill
+                                className="object-cover"
+                                unoptimized
+                              />
+                            ) : (
+                              <FileCheck2 className="w-6 h-6 text-[#285735]" />
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium text-[#222222] truncate">
-                              {licenseFrontFile?.name}
+                              {licenseFrontFile.name}
                             </p>
                             <p className="text-[11px] text-[#285735] font-semibold flex items-center gap-1 mt-0.5">
                               <CheckCircle2 className="w-3 h-3" /> Ready to upload
@@ -714,7 +765,7 @@ export default function DriverApplicationPage() {
                               setLicenseFrontFile(null);
                               setLicenseFrontPreview(null);
                             }}
-                            className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition-colors"
+                            className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
                             title="Remove"
                           >
                             <X className="w-4 h-4" />
@@ -731,7 +782,7 @@ export default function DriverApplicationPage() {
                             Upload Front Photo *
                           </span>
                           <span className="text-[11px] text-gray-400">
-                            JPG, JPEG, PNG, or PDF
+                            JPG, PNG, or PDF
                           </span>
                         </button>
                       )}
@@ -745,32 +796,40 @@ export default function DriverApplicationPage() {
                       <input
                         ref={licenseBackInputRef}
                         type="file"
-                        accept="image/jpeg,image/png,application/pdf"
+                        accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
                         onChange={(e) => {
                           if (e.target.files && e.target.files[0]) {
                             const file = e.target.files[0];
-                            setLicenseBackFile(file);
-                            setLicenseBackPreview(URL.createObjectURL(file));
-                            setErrorMsg(null);
+                            if (validateFile(file)) {
+                              setLicenseBackFile(file);
+                              setLicenseBackPreview(file.type.startsWith("image/") ? URL.createObjectURL(file) : null);
+                              setErrorMsg(null);
+                            } else {
+                              e.target.value = "";
+                            }
                           }
                         }}
                         className="hidden"
                       />
 
-                      {licenseBackPreview ? (
+                      {licenseBackFile ? (
                         <div className="relative rounded-xl border border-gray-200 bg-[#f8faf8] p-3 flex items-center gap-3">
-                          <div className="relative w-16 h-12 rounded-lg overflow-hidden shrink-0 border border-gray-200">
-                            <Image
-                              src={licenseBackPreview}
-                              alt="License Back"
-                              fill
-                              className="object-cover"
-                              unoptimized
-                            />
+                          <div className="relative w-16 h-12 rounded-lg overflow-hidden shrink-0 border border-gray-200 bg-white flex items-center justify-center">
+                            {licenseBackPreview ? (
+                              <Image
+                                src={licenseBackPreview}
+                                alt="License Back"
+                                fill
+                                className="object-cover"
+                                unoptimized
+                              />
+                            ) : (
+                              <FileCheck2 className="w-6 h-6 text-[#285735]" />
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium text-[#222222] truncate">
-                              {licenseBackFile?.name}
+                              {licenseBackFile.name}
                             </p>
                             <p className="text-[11px] text-[#285735] font-semibold flex items-center gap-1 mt-0.5">
                               <CheckCircle2 className="w-3 h-3" /> Ready to upload
@@ -782,7 +841,7 @@ export default function DriverApplicationPage() {
                               setLicenseBackFile(null);
                               setLicenseBackPreview(null);
                             }}
-                            className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition-colors"
+                            className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
                             title="Remove"
                           >
                             <X className="w-4 h-4" />
@@ -799,7 +858,7 @@ export default function DriverApplicationPage() {
                             Upload Back Photo *
                           </span>
                           <span className="text-[11px] text-gray-400">
-                            JPG, JPEG, PNG, or PDF
+                            JPG, PNG, or PDF
                           </span>
                         </button>
                       )}
@@ -813,7 +872,7 @@ export default function DriverApplicationPage() {
                     4. Chauffeur Registration — Optional
                   </h2>
                   <p className="text-xs text-[#666666] mb-4">
-                    If you currently have a Chauffeur Registration, please provide the information and upload clear photos of the document.
+                    If you currently have a Chauffeur Registration, please provide the information and upload a clear photo of the document showing your registration number.
                   </p>
 
                   <div className="mb-5">
@@ -824,7 +883,7 @@ export default function DriverApplicationPage() {
                       <button
                         type="button"
                         onClick={() => setFormData({ ...formData, hasChauffeurRegistration: true })}
-                        className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                        className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                           formData.hasChauffeurRegistration
                             ? "bg-[#285735] text-white shadow-sm"
                             : "bg-[#f8faf8] text-[#555555] border border-gray-200 hover:bg-gray-100"
@@ -841,12 +900,10 @@ export default function DriverApplicationPage() {
                             chauffeurRegistrationNumber: "",
                             chauffeurRegistrationExpirationDate: ""
                           });
-                          setChauffeurFrontFile(null);
-                          setChauffeurFrontPreview(null);
-                          setChauffeurBackFile(null);
-                          setChauffeurBackPreview(null);
+                          setChauffeurFile(null);
+                          setChauffeurPreview(null);
                         }}
-                        className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                        className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                           !formData.hasChauffeurRegistration
                             ? "bg-[#285735] text-white shadow-sm"
                             : "bg-[#f8faf8] text-[#555555] border border-gray-200 hover:bg-gray-100"
@@ -862,7 +919,7 @@ export default function DriverApplicationPage() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div>
                           <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
-                            Chauffeur Registration Number (Optional)
+                            Chauffeur Registration Number
                           </label>
                           <input
                             type="text"
@@ -875,7 +932,7 @@ export default function DriverApplicationPage() {
 
                         <div>
                           <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
-                            Expiration Date (Optional)
+                            Expiration Date
                           </label>
                           <input
                             type="date"
@@ -886,135 +943,80 @@ export default function DriverApplicationPage() {
                         </div>
                       </div>
 
-                      {/* Chauffeur Photo Upload */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
-                        {/* Front */}
-                        <div>
-                          <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
-                            Chauffeur Registration Front Photo (Optional)
-                          </label>
-                          <input
-                            ref={chauffeurFrontInputRef}
-                            type="file"
-                            accept="image/jpeg,image/png,application/pdf"
-                            onChange={(e) => {
-                              if (e.target.files && e.target.files[0]) {
-                                const file = e.target.files[0];
-                                setChauffeurFrontFile(file);
-                                setChauffeurFrontPreview(URL.createObjectURL(file));
+                      {/* Single Chauffeur Registration Photo Upload */}
+                      <div className="pt-2">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                          Chauffeur Registration Photo (Showing Registration Number)
+                        </label>
+                        <input
+                          ref={chauffeurInputRef}
+                          type="file"
+                          accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              const file = e.target.files[0];
+                              if (validateFile(file)) {
+                                setChauffeurFile(file);
+                                setChauffeurPreview(file.type.startsWith("image/") ? URL.createObjectURL(file) : null);
+                                setErrorMsg(null);
+                              } else {
+                                e.target.value = "";
                               }
-                            }}
-                            className="hidden"
-                          />
+                            }
+                          }}
+                          className="hidden"
+                        />
 
-                          {chauffeurFrontPreview ? (
-                            <div className="relative rounded-xl border border-gray-200 bg-white p-3 flex items-center gap-3">
-                              <div className="relative w-16 h-12 rounded-lg overflow-hidden shrink-0 border border-gray-200">
+                        {chauffeurFile ? (
+                          <div className="relative rounded-xl border border-gray-200 bg-white p-3 flex items-center gap-3">
+                            <div className="relative w-16 h-12 rounded-lg overflow-hidden shrink-0 border border-gray-200 bg-[#f8faf8] flex items-center justify-center">
+                              {chauffeurPreview ? (
                                 <Image
-                                  src={chauffeurFrontPreview}
-                                  alt="Registration Front"
+                                  src={chauffeurPreview}
+                                  alt="Registration Document"
                                   fill
                                   className="object-cover"
                                   unoptimized
                                 />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-[#222222] truncate">
-                                  {chauffeurFrontFile?.name}
-                                </p>
-                                <p className="text-[11px] text-[#285735] font-semibold flex items-center gap-1 mt-0.5">
-                                  <CheckCircle2 className="w-3 h-3" /> Attached
-                                </p>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setChauffeurFrontFile(null);
-                                  setChauffeurFrontPreview(null);
-                                }}
-                                className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition-colors"
-                                title="Remove"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
+                              ) : (
+                                <FileCheck2 className="w-6 h-6 text-[#285735]" />
+                              )}
                             </div>
-                          ) : (
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-[#222222] truncate">
+                                {chauffeurFile.name}
+                              </p>
+                              <p className="text-[11px] text-[#285735] font-semibold flex items-center gap-1 mt-0.5">
+                                <CheckCircle2 className="w-3 h-3" /> Attached
+                              </p>
+                            </div>
                             <button
                               type="button"
-                              onClick={() => chauffeurFrontInputRef.current?.click()}
-                              className="w-full py-5 px-4 rounded-xl border border-dashed border-gray-300 hover:border-[#285735] bg-white hover:bg-gray-50 transition-all flex flex-col items-center justify-center text-center gap-1.5 cursor-pointer"
+                              onClick={() => {
+                                setChauffeurFile(null);
+                                setChauffeurPreview(null);
+                              }}
+                              className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
+                              title="Remove"
                             >
-                              <Camera className="w-5 h-5 text-gray-400" />
-                              <span className="text-xs font-semibold text-[#444444]">
-                                Upload Front Photo
-                              </span>
+                              <X className="w-4 h-4" />
                             </button>
-                          )}
-                        </div>
-
-                        {/* Back */}
-                        <div>
-                          <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
-                            Chauffeur Registration Back Photo (Optional)
-                          </label>
-                          <input
-                            ref={chauffeurBackInputRef}
-                            type="file"
-                            accept="image/jpeg,image/png,application/pdf"
-                            onChange={(e) => {
-                              if (e.target.files && e.target.files[0]) {
-                                const file = e.target.files[0];
-                                setChauffeurBackFile(file);
-                                setChauffeurBackPreview(URL.createObjectURL(file));
-                              }
-                            }}
-                            className="hidden"
-                          />
-
-                          {chauffeurBackPreview ? (
-                            <div className="relative rounded-xl border border-gray-200 bg-white p-3 flex items-center gap-3">
-                              <div className="relative w-16 h-12 rounded-lg overflow-hidden shrink-0 border border-gray-200">
-                                <Image
-                                  src={chauffeurBackPreview}
-                                  alt="Registration Back"
-                                  fill
-                                  className="object-cover"
-                                  unoptimized
-                                />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-[#222222] truncate">
-                                  {chauffeurBackFile?.name}
-                                </p>
-                                <p className="text-[11px] text-[#285735] font-semibold flex items-center gap-1 mt-0.5">
-                                  <CheckCircle2 className="w-3 h-3" /> Attached
-                                </p>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setChauffeurBackFile(null);
-                                  setChauffeurBackPreview(null);
-                                }}
-                                className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition-colors"
-                                title="Remove"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => chauffeurBackInputRef.current?.click()}
-                              className="w-full py-5 px-4 rounded-xl border border-dashed border-gray-300 hover:border-[#285735] bg-white hover:bg-gray-50 transition-all flex flex-col items-center justify-center text-center gap-1.5 cursor-pointer"
-                            >
-                              <Camera className="w-5 h-5 text-gray-400" />
-                              <span className="text-xs font-semibold text-[#444444]">
-                                Upload Back Photo
-                              </span>
-                            </button>
-                          )}
-                        </div>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => chauffeurInputRef.current?.click()}
+                            className="w-full py-5 px-4 rounded-xl border border-dashed border-gray-300 hover:border-[#285735] bg-white hover:bg-gray-50 transition-all flex flex-col items-center justify-center text-center gap-1.5 cursor-pointer"
+                          >
+                            <Camera className="w-5 h-5 text-gray-400" />
+                            <span className="text-xs font-semibold text-[#444444]">
+                              Upload Registration Document Photo
+                            </span>
+                            <span className="text-[11px] text-gray-400">
+                              JPG, PNG, or PDF
+                            </span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1038,7 +1040,7 @@ export default function DriverApplicationPage() {
                               key={opt}
                               type="button"
                               onClick={() => toggleAvailability(opt)}
-                              className={`px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all ${
+                              className={`px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                                 isSelected
                                   ? "bg-[#285735] text-white border-[#285735] shadow-sm"
                                   : "bg-[#f8faf8] text-[#555555] border-gray-200 hover:bg-gray-100"
@@ -1063,7 +1065,7 @@ export default function DriverApplicationPage() {
                               key={hr}
                               type="button"
                               onClick={() => setFormData({ ...formData, preferredHours: hr })}
-                              className={`px-4 py-2.5 rounded-xl text-xs font-semibold border text-center transition-all ${
+                              className={`px-4 py-2.5 rounded-xl text-xs font-semibold border text-center transition-all cursor-pointer ${
                                 isSelected
                                   ? "bg-[#285735] text-white border-[#285735] shadow-sm"
                                   : "bg-[#f8faf8] text-[#555555] border-gray-200 hover:bg-gray-100"
@@ -1095,7 +1097,7 @@ export default function DriverApplicationPage() {
                             key={lang}
                             type="button"
                             onClick={() => toggleLanguage(lang)}
-                            className={`px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all ${
+                            className={`px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                               isSelected
                                 ? "bg-[#285735] text-white border-[#285735] shadow-sm"
                                 : "bg-[#f8faf8] text-[#555555] border-gray-200 hover:bg-gray-100"
@@ -1111,20 +1113,20 @@ export default function DriverApplicationPage() {
                       type="text"
                       value={formData.otherLanguage}
                       onChange={(e) => setFormData({ ...formData, otherLanguage: e.target.value })}
-                      placeholder="Other language(s)... (Optional)"
+                      placeholder="Other language(s)..."
                       className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all"
                     />
                   </div>
                 </div>
 
-                {/* 7. ADDITIONAL INFORMATION */}
+                {/* 7. ADDITIONAL INFORMATION — OPTIONAL */}
                 <div>
                   <h2 className="text-base font-bold text-[#1a3822] pb-3 border-b border-[#e7ede7] mb-5">
-                    7. Additional Information
+                    7. Additional Information — Optional
                   </h2>
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
-                      Additional Information / Notes (Optional)
+                      Additional Information / Notes
                     </label>
                     <textarea
                       value={formData.notes}

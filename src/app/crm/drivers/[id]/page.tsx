@@ -614,7 +614,7 @@ export default function DriverDetailPage({ params }: { params: Promise<{ id: str
 
                 {driver.chauffeurRegistrationFrontUrl && (
                   <div className="space-y-2">
-                    <span className="text-xs font-semibold text-slate-300">Belge Ön Yüz</span>
+                    <span className="text-xs font-semibold text-slate-300">Chauffeur Registration Belgesi</span>
                     <div 
                       onClick={() => setSelectedImage({ url: driver.chauffeurRegistrationFrontUrl!, title: `${driver.firstName} ${driver.lastName} - Chauffeur Reg Ön` })}
                       className="group relative aspect-[16/10] rounded-xl overflow-hidden bg-slate-950 border border-slate-800 cursor-pointer hover:border-emerald-500/50 transition-all"

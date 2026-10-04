@@ -25,11 +25,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const originalName = file.name || "license.jpg";
+    const originalName = file.name || "document.jpg";
     const ext = originalName.split(".").pop()?.toLowerCase() || "jpg";
     const mimeType = file.type || "image/jpeg";
 
+    const ALLOWED_EXTS = ["jpg", "jpeg", "png", "pdf"];
+    const ALLOWED_MIMES = ["image/jpeg", "image/png", "application/pdf"];
+
+    if (!ALLOWED_EXTS.includes(ext) && !ALLOWED_MIMES.includes(mimeType)) {
+      return NextResponse.json(
+        { success: false, error: "Only JPG, PNG, and PDF files are accepted." },
+        { status: 400 }
+      );
+    }
+
+    const buffer = Buffer.from(await file.arrayBuffer());
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2, 7);
     const fileName = `licenses/${timestamp}-${side}-${random}.${ext}`;

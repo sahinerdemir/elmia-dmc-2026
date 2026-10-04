@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
       hasChauffeurRegistration = false,
       chauffeurRegistrationNumber = "",
       chauffeurRegistrationExpirationDate = "",
+      chauffeurRegistrationPhotoUrl = "",
       chauffeurRegistrationFrontUrl = "",
       chauffeurRegistrationBackUrl = "",
       availability = [],
@@ -94,16 +95,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!phone || !phone.trim()) {
+    const cleanedPhone = (phone || "").replace(/\D/g, "");
+    if (!phone || cleanedPhone.length !== 10) {
       return NextResponse.json(
-        { success: false, error: "Phone Number is required." },
+        { success: false, error: "Please enter a valid 10-digit phone number (e.g. (555) 000-0000)." },
         { status: 400 }
       );
     }
 
-    if (!email || !email.trim()) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email.trim())) {
       return NextResponse.json(
-        { success: false, error: "Email Address is required." },
+        { success: false, error: "Please enter a valid email address with '@' and domain (e.g. name@domain.com)." },
         { status: 400 }
       );
     }
@@ -199,7 +202,7 @@ export async function POST(req: NextRequest) {
       hasChauffeurRegistration: Boolean(hasChauffeurRegistration),
       chauffeurRegistrationNumber: hasChauffeurRegistration && chauffeurRegistrationNumber ? chauffeurRegistrationNumber.trim() : undefined,
       chauffeurRegistrationExpirationDate: hasChauffeurRegistration && chauffeurRegistrationExpirationDate ? chauffeurRegistrationExpirationDate.trim() : undefined,
-      chauffeurRegistrationFrontUrl: hasChauffeurRegistration && chauffeurRegistrationFrontUrl ? chauffeurRegistrationFrontUrl.trim() : undefined,
+      chauffeurRegistrationFrontUrl: hasChauffeurRegistration ? (chauffeurRegistrationPhotoUrl?.trim() || chauffeurRegistrationFrontUrl?.trim() || undefined) : undefined,
       chauffeurRegistrationBackUrl: hasChauffeurRegistration && chauffeurRegistrationBackUrl ? chauffeurRegistrationBackUrl.trim() : undefined,
       availability: Array.isArray(availability) ? availability : [],
       preferredHours: String(preferredHours || "Flexible").trim(),
