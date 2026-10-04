@@ -20,7 +20,8 @@ import {
   Send,
   ChevronDown,
   Trash2,
-  RotateCcw
+  RotateCcw,
+  Archive
 } from "lucide-react";
 import { Lead, LeadStatus } from "@/types/crm";
 import ClientCommunicationPanel from "@/components/crm/ClientCommunicationPanel";
@@ -205,12 +206,22 @@ export default function ProposalDetailPage({ params }: { params: Promise<{ id: s
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-4 sm:space-y-6">
       {/* Top Back Nav & Actions */}
       <div className="flex items-center justify-between">
-        <Link 
-          href={lead.isTrashed || lead.status === "trashed" ? "/crm/trash" : "/crm/proposals"} 
-          className="text-gray-600 hover:text-gray-900 active:scale-95 flex items-center text-sm font-semibold transition-all py-1.5"
-        >
-          <ArrowLeft className="w-4 h-4 mr-1.5" /> {lead.isTrashed || lead.status === "trashed" ? "Back to Trash" : "Back to Proposals"}
-        </Link>
+        <div className="flex items-center space-x-3">
+          <Link 
+            href={lead.isTrashed || lead.status === "trashed" ? "/crm/trash" : "/crm/proposals"} 
+            className="text-gray-600 hover:text-gray-900 active:scale-95 flex items-center text-sm font-semibold transition-all py-1.5"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1.5" /> {lead.isTrashed || lead.status === "trashed" ? "Back to Trash" : "Back to Proposals"}
+          </Link>
+          {(lead.status === "archived" || lead.status === "rejected") && !lead.isTrashed && (
+            <Link
+              href="/crm/proposals/archive"
+              className="text-rose-600 hover:text-rose-800 active:scale-95 flex items-center text-sm font-semibold transition-all py-1.5 border-l border-gray-300 pl-3"
+            >
+              <Archive className="w-3.5 h-3.5 mr-1" /> Back to Archive
+            </Link>
+          )}
+        </div>
         {!(lead.isTrashed || lead.status === "trashed") && (
           <button
             onClick={handleMoveToTrash}
@@ -335,7 +346,7 @@ export default function ProposalDetailPage({ params }: { params: Promise<{ id: s
             <h3 className="text-xs font-bold mb-3 uppercase tracking-wider text-gray-400">Lead Status</h3>
             <div className="relative mb-2">
               <select 
-                value={lead.status}
+                value={lead.status === "rejected" ? "archived" : lead.status}
                 onChange={(e) => handleUpdateStatus(e.target.value as LeadStatus)}
                 className="w-full pl-4 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#285735] appearance-none cursor-pointer"
               >
@@ -343,12 +354,17 @@ export default function ProposalDetailPage({ params }: { params: Promise<{ id: s
                 <option value="read">Read (In Progress)</option>
                 <option value="responded">Responded</option>
                 <option value="converted">Converted (Won)</option>
-                <option value="archived">Archived</option>
+                <option value="archived">❌ Reddedildi (Arşiv)</option>
               </select>
               <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
                 <ChevronDown className="w-4 h-4 text-gray-400" />
               </div>
             </div>
+            {(lead.status === "archived" || lead.status === "rejected") && (
+              <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 p-2 rounded-lg mb-2">
+                📦 Bu teklif şu anda Arşivde. Durumu değiştirdiğinizde otomatik olarak aktif teklifler listesine taşınır.
+              </p>
+            )}
             <p className={`text-[11px] font-medium h-4 transition-colors ${statusSaved ? "text-emerald-600" : "text-gray-400"}`}>
               {statusSaved ? "✓ Status saved successfully." : "Select to save immediately."}
             </p>

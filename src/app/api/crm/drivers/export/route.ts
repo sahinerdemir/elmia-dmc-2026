@@ -26,8 +26,15 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const format = searchParams.get("format") || "xls"; // "xls" or "csv"
+    const filterStatus = searchParams.get("status");
 
-    const drivers = await getAllDrivers();
+    let drivers = await getAllDrivers();
+    if (filterStatus === "rejected") {
+      drivers = drivers.filter((d) => d.status === "rejected");
+    } else if (filterStatus === "active") {
+      drivers = drivers.filter((d) => d.status !== "rejected");
+    }
+
     const dateStr = new Date().toISOString().split("T")[0];
 
     if (format === "csv") {

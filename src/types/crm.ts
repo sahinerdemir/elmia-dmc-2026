@@ -1,6 +1,6 @@
 export type LeadCategory = "proposal" | "contact";
 
-export type LeadStatus = "unread" | "read" | "responded" | "converted" | "archived" | "trashed";
+export type LeadStatus = "unread" | "read" | "responded" | "converted" | "rejected" | "archived" | "trashed";
 
 export interface ClientMessage {
   id: string;

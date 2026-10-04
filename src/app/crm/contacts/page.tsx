@@ -11,12 +11,14 @@ import {
   Eye, 
   Building2, 
   Calendar,
-  Trash2
+  Trash2,
+  Archive
 } from "lucide-react";
 import { Lead } from "@/types/crm";
 
 export default function ContactsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [archiveCount, setArchiveCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -40,6 +42,30 @@ export default function ContactsPage() {
     }
   };
 
+  const handleQuickReject = async (id: string, name: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!window.confirm(`"${name}" adlı iletişim talebini Arşive (Reddedildi) taşımak istediğinize emin misiniz?`)) {
+      return;
+    }
+    try {
+      const res = await fetch("/api/crm/leads", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status: "archived" })
+      });
+      if (res.ok) {
+        setLeads((prev) => prev.filter((l) => l.id !== id));
+        setArchiveCount((prev) => prev + 1);
+      } else {
+        alert("Talep arşive taşınamadı.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Ağ hatası.");
+    }
+  };
+
   useEffect(() => {
     async function fetchLeads() {
       setIsLoading(true);
@@ -47,11 +73,17 @@ export default function ContactsPage() {
         const res = await fetch("/api/crm/leads");
         const data = await res.json();
         if (data.leads) {
-          setLeads(
-            data.leads.filter(
-              (l: Lead) => l.category === "contact" && !l.isTrashed && l.status !== "trashed"
-            )
+          const contactLeads = data.leads.filter(
+            (l: Lead) => l.category === "contact" && !l.isTrashed && l.status !== "trashed"
           );
+          const active = contactLeads.filter(
+            (l: Lead) => l.status !== "rejected" && l.status !== "archived"
+          );
+          const archived = contactLeads.filter(
+            (l: Lead) => l.status === "rejected" || l.status === "archived"
+          );
+          setLeads(active);
+          setArchiveCount(archived.length);
         }
       } catch (e) {
         console.error("Failed to fetch leads", e);
@@ -95,12 +127,31 @@ export default function ContactsPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#1a3822] font-heading flex items-center">
-            <Users className="w-6 h-6 sm:w-8 sm:h-8 mr-2 sm:mr-3 text-[#285735]" />
-            Contacts
-          </h1>
-          <p className="text-xs sm:text-sm text-gray-600 mt-1">Manage all service and event contact requests.</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#1a3822] font-heading flex items-center">
+              <Users className="w-6 h-6 sm:w-8 sm:h-8 mr-2 sm:mr-3 text-[#285735]" />
+              Contacts
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">Manage all service and event contact requests.</p>
+          </div>
+
+          {/* Navigation Tabs between Active & Archive */}
+          <div className="flex items-center space-x-2 bg-gray-100/80 p-1 rounded-xl">
+            <Link
+              href="/crm/contacts"
+              className="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-[#285735] shadow-xs"
+            >
+              Aktif Talepler ({leads.length})
+            </Link>
+            <Link
+              href="/crm/contacts/archive"
+              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-gray-600 hover:text-gray-900 transition-all flex items-center space-x-1.5"
+            >
+              <Archive className="w-3.5 h-3.5" />
+              <span>Arşiv ({archiveCount})</span>
+            </Link>
+          </div>
         </div>
         
         {/* Search & Filter Bar (Mobile-friendly stacked or side-by-side) */}
@@ -121,7 +172,7 @@ export default function ContactsPage() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#285735] bg-white cursor-pointer"
             >
-              <option value="all">All Statuses</option>
+              <option value="all">Tüm Aktifler</option>
               <option value="unread">Unread</option>
               <option value="read">Read</option>
               <option value="responded">Responded</option>
@@ -173,7 +224,14 @@ export default function ContactsPage() {
 
                 <div className="flex items-center justify-between text-[11px] text-gray-400 pt-2 border-t border-gray-100">
                   <span>{new Date(lead.createdAt).toLocaleDateString()}</span>
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={(e) => handleQuickReject(lead.id, lead.name, e)}
+                      title="Reddet / Arşive Taşı"
+                      className="p-1 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"
+                    >
+                      <Archive className="w-3.5 h-3.5" />
+                    </button>
                     <button
                       onClick={(e) => handleDeleteLead(lead.id, lead.name, e)}
                       title="Move to Trash"
@@ -234,6 +292,13 @@ export default function ContactsPage() {
                         >
                           Open <ChevronRight className="w-3 h-3 ml-1" />
                         </Link>
+                        <button
+                          onClick={(e) => handleQuickReject(lead.id, lead.name, e)}
+                          title="Reddet / Arşive Taşı"
+                          className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 border border-transparent hover:border-amber-200 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <Archive className="w-4 h-4" />
+                        </button>
                         <button
                           onClick={(e) => handleDeleteLead(lead.id, lead.name, e)}
                           title="Move to Trash"

@@ -14,8 +14,21 @@ import {
   X,
   ChevronRight,
   Trash2,
-  Car
+  Car,
+  Archive
 } from "lucide-react";
+
+interface NavSubItem {
+  name: string;
+  href: string;
+}
+
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  children?: NavSubItem[];
+}
 
 export default function CRMSidebar() {
   const pathname = usePathname();
@@ -54,11 +67,32 @@ export default function CRMSidebar() {
     }
   };
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { name: "Dashboard", href: "/crm", icon: LayoutDashboard },
-    { name: "Proposals", href: "/crm/proposals", icon: FileText },
-    { name: "Contacts", href: "/crm/contacts", icon: Users },
-    { name: "Drivers", href: "/crm/drivers", icon: Car },
+    { 
+      name: "Proposals", 
+      href: "/crm/proposals", 
+      icon: FileText,
+      children: [
+        { name: "Archive", href: "/crm/proposals/archive" }
+      ]
+    },
+    { 
+      name: "Contacts", 
+      href: "/crm/contacts", 
+      icon: Users,
+      children: [
+        { name: "Archive", href: "/crm/contacts/archive" }
+      ]
+    },
+    { 
+      name: "Drivers", 
+      href: "/crm/drivers", 
+      icon: Car,
+      children: [
+        { name: "Archive", href: "/crm/drivers/archive" }
+      ]
+    },
     { name: "Trash", href: "/crm/trash", icon: Trash2 },
     { name: "Settings", href: "/crm/settings", icon: Settings },
   ];
@@ -130,23 +164,52 @@ export default function CRMSidebar() {
 
         <nav className="flex-1 px-3 space-y-1.5 overflow-y-auto">
           {navItems.map((item) => {
-            const isActive = pathname === item.href || (item.href !== "/crm" && pathname.startsWith(item.href));
+            const hasChildren = item.children && item.children.length > 0;
+            const isSubActive = hasChildren && item.children!.some((sub) => pathname === sub.href);
+            const isMainActive = !isSubActive && (pathname === item.href || (item.href !== "/crm" && pathname.startsWith(item.href)));
+
             return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex items-center justify-between px-4 py-3.5 rounded-xl transition-all ${
-                  isActive 
-                    ? "bg-[#285735] text-white font-semibold shadow-sm" 
-                    : "text-[#a0a0a0] hover:bg-white/5 hover:text-white"
-                }`}
-              >
-                <div className="flex items-center space-x-3">
-                  <item.icon className={`w-5 h-5 ${isActive ? "text-white" : "text-[#74b382]"}`} />
-                  <span className="text-sm">{item.name}</span>
-                </div>
-                <ChevronRight className={`w-4 h-4 ${isActive ? "text-white/70" : "text-white/20"}`} />
-              </Link>
+              <div key={item.name} className="space-y-1">
+                <Link
+                  href={item.href}
+                  className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all ${
+                    isMainActive 
+                      ? "bg-[#285735] text-white font-semibold shadow-sm" 
+                      : "text-[#a0a0a0] hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <item.icon className={`w-5 h-5 ${isMainActive ? "text-white" : "text-[#74b382]"}`} />
+                    <span className="text-sm">{item.name}</span>
+                  </div>
+                  <ChevronRight className={`w-4 h-4 ${isMainActive ? "text-white/70" : "text-white/20"}`} />
+                </Link>
+
+                {hasChildren && (
+                  <div className="pl-9 pr-2 space-y-1">
+                    {item.children!.map((sub) => {
+                      const active = pathname === sub.href;
+                      return (
+                        <Link
+                          key={sub.name}
+                          href={sub.href}
+                          className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all ${
+                            active
+                              ? "bg-white/15 text-white font-semibold shadow-xs border border-white/10"
+                              : "text-[#8a9e90] hover:bg-white/5 hover:text-white"
+                          }`}
+                        >
+                          <div className="flex items-center space-x-2">
+                            <Archive className={`w-3.5 h-3.5 ${active ? "text-[#74b382]" : "text-[#8a9e90]"}`} />
+                            <span>{sub.name}</span>
+                          </div>
+                          <ChevronRight className={`w-3 h-3 ${active ? "text-[#74b382]" : "text-white/20"}`} />
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>
@@ -179,22 +242,48 @@ export default function CRMSidebar() {
           Operations Desk
         </div>
 
-        <nav className="flex-1 px-4 space-y-1.5">
+        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto">
           {navItems.map((item) => {
-            const isActive = pathname === item.href || (item.href !== "/crm" && pathname.startsWith(item.href));
+            const hasChildren = item.children && item.children.length > 0;
+            const isSubActive = hasChildren && item.children!.some((sub) => pathname === sub.href);
+            const isMainActive = !isSubActive && (pathname === item.href || (item.href !== "/crm" && pathname.startsWith(item.href)));
+
             return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${
-                  isActive 
-                    ? "bg-[#285735] text-white font-semibold shadow-sm" 
-                    : "text-[#a0a0a0] hover:bg-white/5 hover:text-white"
-                }`}
-              >
-                <item.icon className={`w-5 h-5 ${isActive ? "text-white" : "text-[#74b382]"}`} />
-                <span className="text-sm">{item.name}</span>
-              </Link>
+              <div key={item.name} className="space-y-1">
+                <Link
+                  href={item.href}
+                  className={`flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all ${
+                    isMainActive 
+                      ? "bg-[#285735] text-white font-semibold shadow-sm" 
+                      : "text-[#a0a0a0] hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  <item.icon className={`w-5 h-5 ${isMainActive ? "text-white" : "text-[#74b382]"}`} />
+                  <span className="text-sm">{item.name}</span>
+                </Link>
+
+                {hasChildren && (
+                  <div className="pl-9 pr-2 space-y-1">
+                    {item.children!.map((sub) => {
+                      const active = pathname === sub.href;
+                      return (
+                        <Link
+                          key={sub.name}
+                          href={sub.href}
+                          className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs transition-all ${
+                            active
+                              ? "bg-white/15 text-white font-semibold shadow-xs border border-white/10"
+                              : "text-[#8a9e90] hover:bg-white/5 hover:text-white"
+                          }`}
+                        >
+                          <Archive className={`w-3.5 h-3.5 ${active ? "text-[#74b382]" : "text-[#8a9e90]"}`} />
+                          <span>{sub.name}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>

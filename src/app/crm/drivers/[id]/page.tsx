@@ -25,7 +25,8 @@ import {
   Download, 
   Check, 
   Sparkles, 
-  FileBadge 
+  FileBadge,
+  Archive
 } from "lucide-react";
 import { DriverApplication, DriverStatus } from "@/types/driver";
 
@@ -188,12 +189,22 @@ export default function DriverDetailPage({ params }: { params: Promise<{ id: str
 
       {/* Top Back Nav & Delete Button */}
       <div className="flex items-center justify-between">
-        <Link
-          href="/crm/drivers"
-          className="text-gray-600 hover:text-gray-900 flex items-center text-sm font-semibold transition-colors py-1.5"
-        >
-          <ArrowLeft className="w-4 h-4 mr-1.5" /> Şoför Başvurularına Dön
-        </Link>
+        <div className="flex items-center space-x-3">
+          <Link
+            href="/crm/drivers"
+            className="text-gray-600 hover:text-gray-900 flex items-center text-sm font-semibold transition-colors py-1.5"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1.5" /> Şoför Başvurularına Dön
+          </Link>
+          {status === "rejected" && (
+            <Link
+              href="/crm/drivers/archive"
+              className="text-rose-600 hover:text-rose-800 flex items-center text-sm font-semibold transition-colors py-1.5 border-l border-gray-300 pl-3"
+            >
+              <Archive className="w-3.5 h-3.5 mr-1" /> Arşive Git
+            </Link>
+          )}
+        </div>
 
         <button
           onClick={handleDelete}
@@ -270,6 +281,12 @@ export default function DriverDetailPage({ params }: { params: Promise<{ id: str
                 </span>
               )}
             </div>
+
+            {status === "rejected" && (
+              <span className="text-[11px] text-rose-700 bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-xl font-medium">
+                📦 Bu başvuru Arşivdedir. Durumu değiştirdiğinizde aktif şoför listesine geri taşınacaktır.
+              </span>
+            )}
 
             {/* Direct Communication Buttons */}
             <a

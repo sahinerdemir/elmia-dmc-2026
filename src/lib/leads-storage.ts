@@ -295,7 +295,8 @@ export async function updateLeadStatus(
 ): Promise<Lead | null> {
   if (isSupabaseConfigured() && supabase) {
     try {
-      const updateData: Record<string, unknown> = { status };
+      const dbStatus = status === "rejected" ? "archived" : status;
+      const updateData: Record<string, unknown> = { status: dbStatus };
       if (internalNotes !== undefined) {
         updateData.internal_notes = internalNotes;
       }
