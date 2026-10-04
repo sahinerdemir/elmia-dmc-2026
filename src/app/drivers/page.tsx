@@ -4,23 +4,14 @@ import React, { useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { 
-  Car, 
-  ShieldCheck, 
+  ChevronRight, 
   Upload, 
   CheckCircle2, 
   AlertCircle, 
-  FileText, 
-  User, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Calendar, 
-  Award, 
-  Sparkles,
-  ArrowRight,
-  Clock,
-  X,
-  Lock
+  X, 
+  FileText,
+  Send,
+  Camera
 } from "lucide-react";
 
 export default function DriverApplicationPage() {
@@ -38,8 +29,6 @@ export default function DriverApplicationPage() {
     childrenDetails: "",
     hasSSN: true,
     ssn: "",
-    languages: "Türkçe, English",
-    vehicleExperience: "",
     notes: ""
   });
 
@@ -118,38 +107,61 @@ export default function DriverApplicationPage() {
       return;
     }
 
+    if (!formData.yearsInUS.trim()) {
+      setErrorMsg("Lütfen kaç yıldır Amerika'da yaşadığınızı belirtiniz.");
+      return;
+    }
+
+    if (!formData.drivingExperienceYears.trim()) {
+      setErrorMsg("Lütfen kaç yıldır şoförlük yaptığınızı belirtiniz.");
+      return;
+    }
+
     if (!formData.licenseNumber.trim()) {
       setErrorMsg("Lütfen ehliyet numaranızı giriniz.");
       return;
     }
 
     if (!frontFile) {
-      setErrorMsg("Lütfen ehliyetinizin ÖN yüzünün fotoğrafını yükleyiniz.");
+      setErrorMsg("Lütfen ehliyetinizin ön yüz fotoğrafını yükleyiniz.");
       return;
     }
 
     if (!backFile) {
-      setErrorMsg("Lütfen ehliyetinizin ARKA yüzünün fotoğrafını yükleyiniz.");
+      setErrorMsg("Lütfen ehliyetinizin arka yüz fotoğrafını yükleyiniz.");
       return;
     }
 
     setIsSubmitting(true);
-    setUploadProgress("Ehliyet fotoğrafları yükleniyor...");
 
     try {
-      // 1. Upload front & back files
-      const licenseFrontUrl = await uploadFile(frontFile, "front");
-      setUploadProgress("Ehliyet arka yüzü yükleniyor...");
-      const licenseBackUrl = await uploadFile(backFile, "back");
+      // Step 1: Upload Front Photo
+      setUploadProgress("Ehliyet ön yüz fotoğrafı yükleniyor...");
+      const frontUrl = await uploadFile(frontFile, "front");
 
+      // Step 2: Upload Back Photo
+      setUploadProgress("Ehliyet arka yüz fotoğrafı yükleniyor...");
+      const backUrl = await uploadFile(backFile, "back");
+
+      // Step 3: Submit Application Data
       setUploadProgress("Başvuru kaydediliyor...");
-
-      // 2. Submit application
       const payload = {
-        ...formData,
-        licenseFrontUrl,
-        licenseBackUrl,
-        _ts: Date.now()
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        phone: formData.phone.trim(),
+        email: formData.email.trim() || undefined,
+        origin: formData.origin.trim(),
+        yearsInUS: formData.yearsInUS.trim(),
+        drivingExperienceYears: formData.drivingExperienceYears.trim(),
+        licenseNumber: formData.licenseNumber.trim().toUpperCase(),
+        licenseState: formData.licenseState.trim().toUpperCase() || "FL",
+        hasChildren: Boolean(formData.hasChildren),
+        childrenDetails: formData.hasChildren ? formData.childrenDetails.trim() : undefined,
+        hasSSN: Boolean(formData.hasSSN),
+        ssn: formData.hasSSN && formData.ssn.trim() ? formData.ssn.trim() : undefined,
+        licenseFrontUrl: frontUrl,
+        licenseBackUrl: backUrl,
+        notes: formData.notes.trim() || undefined
       };
 
       const res = await fetch("/api/drivers/apply", {
@@ -158,18 +170,19 @@ export default function DriverApplicationPage() {
         body: JSON.stringify(payload)
       });
 
-      const resData = await res.json();
+      const result = await res.json();
 
-      if (res.ok && resData.success) {
-        setIsSuccess(true);
-        setCreatedDriverId(resData.driverId);
-      } else {
-        setErrorMsg(resData.error || "Başvuru sırasında bir hata oluştu. Lütfen tekrar deneyiniz.");
+      if (!res.ok || !result.success) {
+        throw new Error(result.error || "Başvuru gönderilirken bir hata oluştu.");
       }
+
+      setCreatedDriverId(result.driver?.id || "");
+      setIsSuccess(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err: unknown) {
-      const errStr = err instanceof Error ? err.message : String(err);
-      console.error("Driver submit error:", errStr);
-      setErrorMsg(errStr || "Bağlantı hatası oluştu. Lütfen tekrar deneyiniz.");
+      console.error("Submission failed:", err);
+      const errorMessage = err instanceof Error ? err.message : "Ağ bağlantısı hatası. Lütfen tekrar deneyiniz.";
+      setErrorMsg(errorMessage);
     } finally {
       setIsSubmitting(false);
       setUploadProgress("");
@@ -177,591 +190,532 @@ export default function DriverApplicationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070b0e] text-[#e2e8f0]">
-      {/* Top Brand Navigation Bar */}
-      <nav className="border-b border-white/10 bg-[#090f14]/90 backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-3">
-            <div className="relative w-36 h-10">
-              <Image
-                src="/images/elmia-dmc-logo.png"
-                alt="ELMIA DMC"
-                fill
-                className="object-contain filter brightness-0 invert opacity-95"
-                priority
-              />
-            </div>
-          </Link>
-          <div className="flex items-center space-x-3 text-xs text-gray-400">
-            <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#c5a880]/10 border border-[#c5a880]/30 text-[#c5a880] font-semibold uppercase tracking-wider">
-              <ShieldCheck className="w-3.5 h-3.5 mr-1.5" /> Chauffeur Portal
-            </span>
-            <Link
-              href="/contact"
-              className="hidden sm:inline-block text-gray-300 hover:text-white transition-colors text-xs font-medium"
-            >
-              Dispatch Desk →
-            </Link>
-          </div>
+    <div className="flex flex-col min-h-screen bg-white">
+      {/* Subpage Header Banner */}
+      <section className="relative pt-14 pb-10 sm:pt-16 sm:pb-12 flex flex-col justify-center bg-[#0e1710] border-b border-[#1a3320] overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="/images/car-hero-img.jpg"
+            alt="ELMIA DMC Executive Fleet"
+            fill
+            priority
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0e1710] via-[#0e1710]/75 to-black/75" />
         </div>
-      </nav>
 
-      {/* Hero Header */}
-      <section className="relative py-16 sm:py-20 px-4 sm:px-6 overflow-hidden">
-        <div className="absolute inset-0 bg-radial from-[#13221b] via-[#070b0e] to-[#070b0e] opacity-70 pointer-events-none" />
-        
-        <div className="max-w-3xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#285735]/30 border border-[#285735] text-[#74b382] text-xs font-bold uppercase tracking-widest mb-6">
-            <Car className="w-4 h-4 mr-1 text-[#c5a880]" />
-            ELMIA DMC • ŞOFÖR BAŞVURU FORMU
-          </div>
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white mb-4 font-heading">
-            Executive Chauffeur <br className="hidden sm:block" />
-            <span className="text-[#c5a880]">Ekibimize Katılın</span>
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          <nav className="flex items-center space-x-2 text-xs text-white/70 mb-4">
+            <Link href="/" className="hover:text-[#61CE70] transition-colors">
+              Home
+            </Link>
+            <ChevronRight className="w-3 h-3 text-white/40" />
+            <span className="text-[#61CE70] font-semibold">Şoför Başvurusu</span>
+          </nav>
+
+          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-normal text-white tracking-tight leading-tight mb-3 font-heading">
+            Şoför Başvuru Formu
           </h1>
-          <p className="text-sm sm:text-base text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            Miami, South Florida ve ülke genelinde VIP delegasyonlar, kurumsal zirveler ve özel havacılık (FBO) transferlerinde görev alacak profesyonel şoförler arıyoruz.
+          <p className="text-sm sm:text-base text-white/80 leading-relaxed font-normal max-w-2xl">
+            Elmia DMC bünyesindeki VIP transfer ve kurumsal delegasyon operasyonlarımızda görev alacak profesyonel şoförler için başvuru formu.
           </p>
-
-          {/* Highlights / Badges */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-8 max-w-2xl mx-auto text-left">
-            <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-              <div className="text-[#c5a880] text-xs font-bold uppercase">Lüks Filo</div>
-              <div className="text-xs text-gray-300 font-medium">Escalade, S-Class, Sprinter</div>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-              <div className="text-[#c5a880] text-xs font-bold uppercase">Prestijli İşler</div>
-              <div className="text-xs text-gray-300 font-medium">FBO, Zirve & VIP Protokol</div>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-              <div className="text-[#c5a880] text-xs font-bold uppercase">Hızlı Ödeme</div>
-              <div className="text-xs text-gray-300 font-medium">Düzenli ve Yüksek Kazanç</div>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-              <div className="text-[#c5a880] text-xs font-bold uppercase">Güvenilirlik</div>
-              <div className="text-xs text-gray-300 font-medium">Kurumsal DMC Altyapısı</div>
-            </div>
-          </div>
         </div>
       </section>
 
-      {/* Main Form Section */}
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 pb-24">
-        {isSuccess ? (
-          /* Success Screen */
-          <div className="bg-[#0e171b] border border-[#285735] rounded-3xl p-8 sm:p-12 text-center shadow-2xl animate-in fade-in duration-300">
-            <div className="w-16 h-16 rounded-full bg-[#285735]/30 border-2 border-[#74b382] flex items-center justify-center mx-auto mb-6 text-[#74b382]">
-              <CheckCircle2 className="w-8 h-8" />
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
-              Başvurunuz Başarıyla Alındı!
-            </h2>
-            <p className="text-sm text-gray-300 max-w-md mx-auto leading-relaxed mb-6">
-              Sayın <strong className="text-white">{formData.firstName} {formData.lastName}</strong>, şoför başvurunuz ve ehliyet belgeleriniz operasyon merkezimize iletilmiştir.
-            </p>
-
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 max-w-md mx-auto mb-8 text-xs text-gray-300 space-y-1.5 text-left font-mono">
-              <div><span className="text-gray-500">Başvuru Referansı:</span> {createdDriverId}</div>
-              <div><span className="text-gray-500">İletişim Telefonu:</span> {formData.phone}</div>
-              <div><span className="text-gray-500">Ehliyet No:</span> {formData.licenseNumber} ({formData.licenseState})</div>
-            </div>
-
-            <p className="text-xs text-gray-400 mb-8 max-w-md mx-auto">
-              Operasyon ekibimiz başvurunuzu inceledikten sonra telefon veya WhatsApp üzerinden sizinle en kısa sürede iletişime geçecektir.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link
-                href="/"
-                className="w-full sm:w-auto px-8 py-3 bg-[#c5a880] hover:bg-[#b0926a] text-black font-bold text-xs uppercase tracking-wider rounded-xl transition-all"
-              >
-                Ana Sayfaya Dön
-              </Link>
-              <button
-                onClick={() => {
-                  setIsSuccess(false);
-                  setFormData({
-                    firstName: "",
-                    lastName: "",
-                    phone: "",
-                    email: "",
-                    origin: "",
-                    yearsInUS: "",
-                    drivingExperienceYears: "",
-                    licenseNumber: "",
-                    licenseState: "FL",
-                    hasChildren: false,
-                    childrenDetails: "",
-                    hasSSN: true,
-                    ssn: "",
-                    languages: "Türkçe, English",
-                    vehicleExperience: "",
-                    notes: ""
-                  });
-                  setFrontFile(null);
-                  setFrontPreview(null);
-                  setBackFile(null);
-                  setBackPreview(null);
-                }}
-                className="w-full sm:w-auto px-6 py-3 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs rounded-xl transition-all"
-              >
-                Yeni Başvuru Doldur
-              </button>
-            </div>
-          </div>
-        ) : (
-          /* Application Form Card */
-          <form
-            onSubmit={handleSubmit}
-            className="bg-[#0b1216] border border-white/10 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-8"
-          >
-            {/* Error Notification */}
-            {errorMsg && (
-              <div className="p-4 rounded-xl bg-red-950/50 border border-red-500/50 text-red-200 text-xs sm:text-sm flex items-start space-x-3">
-                <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-                <span>{errorMsg}</span>
+      {/* Main Light Form Section */}
+      <section className="py-12 sm:py-16 bg-[#fcfdfc] border-t border-[#e7ede7]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+          {isSuccess ? (
+            /* Success State */
+            <div className="bg-white border border-[#e5ece5] rounded-2xl p-8 sm:p-12 text-center shadow-sm">
+              <div className="w-16 h-16 rounded-full bg-[#eaf4ec] border border-[#285735] flex items-center justify-center mx-auto mb-5 text-[#285735]">
+                <CheckCircle2 className="w-8 h-8" />
               </div>
-            )}
-
-            {/* SECTION 1: Kişisel Bilgiler */}
-            <div>
-              <div className="flex items-center space-x-2 pb-3 border-b border-white/10 mb-5">
-                <User className="w-4 h-4 text-[#c5a880]" />
-                <h3 className="text-sm font-bold uppercase tracking-wider text-white">
-                  1. Kişisel & İletişim Bilgileri
-                </h3>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-                    Adınız <span className="text-[#c5a880]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.firstName}
-                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    placeholder="Örn: Ahmet"
-                    className="w-full bg-[#111c23] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#c5a880]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-                    Soyadınız <span className="text-[#c5a880]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.lastName}
-                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    placeholder="Örn: Yılmaz"
-                    className="w-full bg-[#111c23] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#c5a880]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-                    Telefon / WhatsApp <span className="text-[#c5a880]">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="+1 (305) 000-0000"
-                    className="w-full bg-[#111c23] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#c5a880]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-                    E-posta Adresi
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="ornek@gmail.com"
-                    className="w-full bg-[#111c23] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#c5a880]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-                    Nerelisiniz? (Ülke / Şehir) <span className="text-[#c5a880]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.origin}
-                    onChange={(e) => setFormData({ ...formData, origin: e.target.value })}
-                    placeholder="Örn: Türkiye / İstanbul"
-                    className="w-full bg-[#111c23] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#c5a880]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-                    Kaç Yıldır Amerika&apos;da Yaşıyorsunuz? <span className="text-[#c5a880]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.yearsInUS}
-                    onChange={(e) => setFormData({ ...formData, yearsInUS: e.target.value })}
-                    placeholder="Örn: 5 yıl"
-                    className="w-full bg-[#111c23] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#c5a880]"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* SECTION 2: Aile & Yasal Bilgiler */}
-            <div>
-              <div className="flex items-center space-x-2 pb-3 border-b border-white/10 mb-5">
-                <ShieldCheck className="w-4 h-4 text-[#c5a880]" />
-                <h3 className="text-sm font-bold uppercase tracking-wider text-white">
-                  2. Aile & Kimlik Bilgileri
-                </h3>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {/* Çocuk Bilgisi */}
-                <div className="bg-[#111c23] border border-white/10 rounded-2xl p-4">
-                  <label className="block text-xs font-semibold text-gray-300 mb-2">
-                    Çocuğunuz Var mı?
-                  </label>
-                  <div className="flex items-center space-x-4 mb-3">
-                    <label className="inline-flex items-center space-x-2 cursor-pointer text-xs">
-                      <input
-                        type="radio"
-                        name="hasChildren"
-                        checked={formData.hasChildren === true}
-                        onChange={() => setFormData({ ...formData, hasChildren: true })}
-                        className="text-[#c5a880] focus:ring-[#c5a880]"
-                      />
-                      <span>Evet</span>
-                    </label>
-                    <label className="inline-flex items-center space-x-2 cursor-pointer text-xs">
-                      <input
-                        type="radio"
-                        name="hasChildren"
-                        checked={formData.hasChildren === false}
-                        onChange={() => setFormData({ ...formData, hasChildren: false, childrenDetails: "" })}
-                        className="text-[#c5a880] focus:ring-[#c5a880]"
-                      />
-                      <span>Hayır</span>
-                    </label>
-                  </div>
-
-                  {formData.hasChildren && (
-                    <input
-                      type="text"
-                      value={formData.childrenDetails}
-                      onChange={(e) => setFormData({ ...formData, childrenDetails: e.target.value })}
-                      placeholder="Çocuk sayısı ve yaşları (Örn: 2 çocuk, 6 ve 9 yaş)"
-                      className="w-full bg-[#0a1217] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#c5a880]"
-                    />
-                  )}
-                </div>
-
-                {/* SSN Bilgisi */}
-                <div className="bg-[#111c23] border border-white/10 rounded-2xl p-4">
-                  <label className="block text-xs font-semibold text-gray-300 mb-2">
-                    SSN Numaranız Var mı?
-                  </label>
-                  <div className="flex items-center space-x-4 mb-3">
-                    <label className="inline-flex items-center space-x-2 cursor-pointer text-xs">
-                      <input
-                        type="radio"
-                        name="hasSSN"
-                        checked={formData.hasSSN === true}
-                        onChange={() => setFormData({ ...formData, hasSSN: true })}
-                        className="text-[#c5a880] focus:ring-[#c5a880]"
-                      />
-                      <span>Evet (Var)</span>
-                    </label>
-                    <label className="inline-flex items-center space-x-2 cursor-pointer text-xs">
-                      <input
-                        type="radio"
-                        name="hasSSN"
-                        checked={formData.hasSSN === false}
-                        onChange={() => setFormData({ ...formData, hasSSN: false, ssn: "" })}
-                        className="text-[#c5a880] focus:ring-[#c5a880]"
-                      />
-                      <span>Hayır (Yok)</span>
-                    </label>
-                  </div>
-
-                  {formData.hasSSN && (
-                    <input
-                      type="text"
-                      value={formData.ssn}
-                      onChange={(e) => setFormData({ ...formData, ssn: e.target.value })}
-                      placeholder="SSN Numaranız (Örn: ***-**-1234 veya tam no)"
-                      className="w-full bg-[#0a1217] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#c5a880]"
-                    />
-                  )}
-                  <p className="text-[10px] text-gray-500 mt-1 flex items-center">
-                    <Lock className="w-3 h-3 mr-1 text-gray-400" /> Bilgileriniz gizli ve güvenli tutulur.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* SECTION 3: Sürüş Deneyimi & Ehliyet Bilgileri */}
-            <div>
-              <div className="flex items-center space-x-2 pb-3 border-b border-white/10 mb-5">
-                <Award className="w-4 h-4 text-[#c5a880]" />
-                <h3 className="text-sm font-bold uppercase tracking-wider text-white">
-                  3. Sürüş Deneyimi & Ehliyet Bilgileri
-                </h3>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-                    Kaç Yıldır Şoförlük Yapıyorsunuz? <span className="text-[#c5a880]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.drivingExperienceYears}
-                    onChange={(e) => setFormData({ ...formData, drivingExperienceYears: e.target.value })}
-                    placeholder="Örn: 8 yıl"
-                    className="w-full bg-[#111c23] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#c5a880]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-                    Ehliyet Numarası <span className="text-[#c5a880]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.licenseNumber}
-                    onChange={(e) => setFormData({ ...formData, licenseNumber: e.target.value })}
-                    placeholder="Örn: Y450-891-23-456-0"
-                    className="w-full bg-[#111c23] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#c5a880]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-                    Ehliyet Eyaleti (State)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.licenseState}
-                    onChange={(e) => setFormData({ ...formData, licenseState: e.target.value })}
-                    placeholder="FL (Florida), NY, etc."
-                    className="w-full bg-[#111c23] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#c5a880]"
-                  />
-                </div>
-
-                <div className="sm:col-span-3">
-                  <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-                    Konuştuğunuz Diller & Tecrübeli Olduğunuz Araçlar
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.vehicleExperience}
-                    onChange={(e) => setFormData({ ...formData, vehicleExperience: e.target.value })}
-                    placeholder="Örn: Escalade ESV, S-Class, Sprinter, Suburban (Diller: Türkçe, İngilizce)"
-                    className="w-full bg-[#111c23] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#c5a880]"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* SECTION 4: Ehliyet Fotoğrafları (Önlü / Arkalı) */}
-            <div>
-              <div className="flex items-center space-x-2 pb-3 border-b border-white/10 mb-2">
-                <FileText className="w-4 h-4 text-[#c5a880]" />
-                <h3 className="text-sm font-bold uppercase tracking-wider text-white">
-                  4. Ehliyet Fotoğrafı (Önlü ve Arkalı) <span className="text-[#c5a880]">*</span>
-                </h3>
-              </div>
-              <p className="text-xs text-gray-400 mb-5">
-                Lütfen ehliyetinizin hem ön hem de arka yüzünün net çekilmiş birer fotoğrafını yükleyiniz.
+              <h2 className="text-2xl sm:text-3xl font-bold text-[#1a3822] mb-3">
+                Başvurunuz Alındı
+              </h2>
+              <p className="text-sm sm:text-base text-[#555555] max-w-md mx-auto leading-relaxed mb-6">
+                Sayın <strong className="text-[#1a3822]">{formData.firstName} {formData.lastName}</strong>, şoför başvurunuz ve ehliyet belgeleriniz operasyon ekibimize iletilmiştir.
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {/* Ehliyet Ön Yüz */}
+              {createdDriverId && (
+                <div className="bg-[#f8faf8] border border-gray-200 rounded-xl p-3.5 max-w-sm mx-auto mb-6 text-xs text-[#555555]">
+                  Başvuru Referans Numarası: <strong className="text-[#1a3822] font-mono">{createdDriverId.slice(0, 8)}</strong>
+                </div>
+              )}
+
+              <p className="text-xs text-[#666666] mb-8 max-w-md mx-auto">
+                Operasyon yöneticilerimiz başvurunuzu inceledikten sonra telefon veya e-posta üzerinden sizinle iletişime geçecektir.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Link
+                  href="/"
+                  className="w-full sm:w-auto px-6 py-3 bg-[#285735] hover:bg-[#1f4429] text-white font-semibold text-xs rounded-xl transition-all shadow-sm"
+                >
+                  Ana Sayfaya Dön
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSuccess(false);
+                    setFormData({
+                      firstName: "",
+                      lastName: "",
+                      phone: "",
+                      email: "",
+                      origin: "",
+                      yearsInUS: "",
+                      drivingExperienceYears: "",
+                      licenseNumber: "",
+                      licenseState: "FL",
+                      hasChildren: false,
+                      childrenDetails: "",
+                      hasSSN: true,
+                      ssn: "",
+                      notes: ""
+                    });
+                    setFrontFile(null);
+                    setFrontPreview(null);
+                    setBackFile(null);
+                    setBackPreview(null);
+                  }}
+                  className="w-full sm:w-auto px-6 py-3 bg-[#f8faf8] hover:bg-gray-100 text-[#444444] border border-gray-200 font-semibold text-xs rounded-xl transition-all"
+                >
+                  Yeni Başvuru Doldur
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Clean Light Form Card */
+            <div className="bg-white border border-[#e5ece5] rounded-2xl p-6 sm:p-10 shadow-sm">
+              <form onSubmit={handleSubmit} className="space-y-8">
+                {/* Error Banner */}
+                {errorMsg && (
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs sm:text-sm flex items-start space-x-3">
+                    <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                    <span>{errorMsg}</span>
+                  </div>
+                )}
+
+                {/* Section 1: Kişisel ve İletişim Bilgileri */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-300 mb-2 flex items-center justify-between">
-                    <span>Ehliyet ÖN Yüzü <span className="text-[#c5a880]">*</span></span>
-                    {frontFile && <span className="text-[11px] text-[#74b382] font-normal">✓ Seçildi</span>}
-                  </label>
-
-                  <input
-                    type="file"
-                    ref={frontInputRef}
-                    accept="image/*,application/pdf"
-                    className="hidden"
-                    onChange={handleFrontFileChange}
-                  />
-
-                  {frontPreview ? (
-                    <div className="relative rounded-2xl overflow-hidden border border-[#c5a880]/50 bg-black/50 h-44 group">
-                      <Image
-                        src={frontPreview}
-                        alt="Ehliyet Ön Yüz"
-                        fill
-                        className="object-contain p-2"
+                  <h2 className="text-base font-bold text-[#1a3822] pb-3 border-b border-[#e7ede7] mb-5">
+                    Kişisel ve İletişim Bilgileri
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                        Adı *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.firstName}
+                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        placeholder="Örn: Ahmet"
+                        className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all"
                       />
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-3">
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                        Soyadı *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.lastName}
+                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        placeholder="Örn: Yılmaz"
+                        className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                        Telefon Numarası *
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        placeholder="+1 (555) 000-0000"
+                        className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                        E-posta Adresi
+                      </label>
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        placeholder="ornek@gmail.com"
+                        className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                        Nereli Olduğu (Memleket / Şehir / Ülke) *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.origin}
+                        onChange={(e) => setFormData({ ...formData, origin: e.target.value })}
+                        placeholder="Örn: İstanbul, Türkiye veya Bakü, Azerbaycan"
+                        className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 2: Amerika ve Şoförlük Deneyimi */}
+                <div>
+                  <h2 className="text-base font-bold text-[#1a3822] pb-3 border-b border-[#e7ede7] mb-5">
+                    Amerika ve Şoförlük Deneyimi
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                        Kaç Yıldır Amerika&apos;da Yaşıyorsunuz? *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.yearsInUS}
+                        onChange={(e) => setFormData({ ...formData, yearsInUS: e.target.value })}
+                        placeholder="Örn: 4 yıl"
+                        className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                        Kaç Yıldır Şoförlük İşi Yapıyorsunuz? *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.drivingExperienceYears}
+                        onChange={(e) => setFormData({ ...formData, drivingExperienceYears: e.target.value })}
+                        placeholder="Örn: 5 yıl"
+                        className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 3: Aile ve Yasal Durum */}
+                <div>
+                  <h2 className="text-base font-bold text-[#1a3822] pb-3 border-b border-[#e7ede7] mb-5">
+                    Aile ve Yasal Durum
+                  </h2>
+                  <div className="space-y-5">
+                    {/* Çocuk Durumu */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                        Çocuğunuz Var mı?
+                      </label>
+                      <div className="flex items-center gap-3 mb-3">
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, hasChildren: false, childrenDetails: "" })}
+                          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                            !formData.hasChildren
+                              ? "bg-[#285735] text-white shadow-sm"
+                              : "bg-[#f8faf8] text-[#555555] border border-gray-200 hover:bg-gray-100"
+                          }`}
+                        >
+                          Hayır, Yok
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, hasChildren: true })}
+                          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                            formData.hasChildren
+                              ? "bg-[#285735] text-white shadow-sm"
+                              : "bg-[#f8faf8] text-[#555555] border border-gray-200 hover:bg-gray-100"
+                          }`}
+                        >
+                          Evet, Var
+                        </button>
+                      </div>
+
+                      {formData.hasChildren && (
+                        <div className="mt-2">
+                          <input
+                            type="text"
+                            value={formData.childrenDetails}
+                            onChange={(e) => setFormData({ ...formData, childrenDetails: e.target.value })}
+                            placeholder="Çocuk sayısı veya yaşları (Örn: 2 çocuk, 4 ve 7 yaşlarında)"
+                            className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* SSN Durumu */}
+                    <div className="pt-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                        SSN (Social Security Number) Var mı?
+                      </label>
+                      <div className="flex items-center gap-3 mb-3">
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, hasSSN: true })}
+                          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                            formData.hasSSN
+                              ? "bg-[#285735] text-white shadow-sm"
+                              : "bg-[#f8faf8] text-[#555555] border border-gray-200 hover:bg-gray-100"
+                          }`}
+                        >
+                          Evet, Var
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, hasSSN: false, ssn: "" })}
+                          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                            !formData.hasSSN
+                              ? "bg-[#285735] text-white shadow-sm"
+                              : "bg-[#f8faf8] text-[#555555] border border-gray-200 hover:bg-gray-100"
+                          }`}
+                        >
+                          Hayır, Yok
+                        </button>
+                      </div>
+
+                      {formData.hasSSN && (
+                        <div className="mt-2">
+                          <input
+                            type="text"
+                            value={formData.ssn}
+                            onChange={(e) => setFormData({ ...formData, ssn: e.target.value })}
+                            placeholder="SSN Numarası (Örn: 000-00-0000)"
+                            className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 4: Ehliyet Bilgileri ve Fotoğraf Yükleme */}
+                <div>
+                  <h2 className="text-base font-bold text-[#1a3822] pb-3 border-b border-[#e7ede7] mb-5">
+                    Ehliyet Bilgileri ve Belgeler
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                        Ehliyet Numarası *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.licenseNumber}
+                        onChange={(e) => setFormData({ ...formData, licenseNumber: e.target.value })}
+                        placeholder="Örn: D123-456-78-900"
+                        className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm font-mono transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                        Verildiği Eyalet *
+                      </label>
+                      <select
+                        value={formData.licenseState}
+                        onChange={(e) => setFormData({ ...formData, licenseState: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all cursor-pointer"
+                      >
+                        <option value="FL">Florida (FL)</option>
+                        <option value="NY">New York (NY)</option>
+                        <option value="CA">California (CA)</option>
+                        <option value="TX">Texas (TX)</option>
+                        <option value="IL">Illinois (IL)</option>
+                        <option value="NV">Nevada (NV)</option>
+                        <option value="NJ">New Jersey (NJ)</option>
+                        <option value="GA">Georgia (GA)</option>
+                        <option value="OTHER">Diğer Eyalet</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Fotoğraf Yükleme Alanı */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    {/* Ön Yüz */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                        Ehliyet Ön Yüzü *
+                      </label>
+                      <input
+                        ref={frontInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFrontFileChange}
+                        className="hidden"
+                      />
+
+                      {frontPreview ? (
+                        <div className="relative rounded-xl border border-gray-200 bg-[#f8faf8] p-3 flex items-center gap-3">
+                          <div className="relative w-16 h-12 rounded-lg overflow-hidden shrink-0 border border-gray-200">
+                            <Image
+                              src={frontPreview}
+                              alt="Ehliyet Ön Yüz"
+                              fill
+                              className="object-cover"
+                              unoptimized
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-[#222222] truncate">
+                              {frontFile?.name}
+                            </p>
+                            <p className="text-[11px] text-[#285735] font-semibold flex items-center gap-1 mt-0.5">
+                              <CheckCircle2 className="w-3 h-3" /> Yüklendi
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFrontFile(null);
+                              setFrontPreview(null);
+                            }}
+                            className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition-colors"
+                            title="Kaldır"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
                         <button
                           type="button"
                           onClick={() => frontInputRef.current?.click()}
-                          className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg text-xs font-medium"
+                          className="w-full py-6 px-4 rounded-xl border border-dashed border-gray-300 hover:border-[#285735] bg-[#fbfcfb] hover:bg-[#f4f7f4] transition-all flex flex-col items-center justify-center text-center gap-2 group cursor-pointer"
                         >
-                          Değiştir
+                          <Camera className="w-6 h-6 text-gray-400 group-hover:text-[#285735] transition-colors" />
+                          <span className="text-xs font-semibold text-[#444444] group-hover:text-[#1a3822]">
+                            Ön Yüz Fotoğrafı Seç
+                          </span>
+                          <span className="text-[11px] text-gray-400">
+                            JPG, PNG veya PDF
+                          </span>
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFrontFile(null);
-                            setFrontPreview(null);
-                          }}
-                          className="p-1.5 bg-red-500/20 text-red-300 hover:bg-red-500/30 rounded-lg text-xs"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <div className="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded text-[10px] text-gray-300">
-                        Ön Yüz
-                      </div>
+                      )}
                     </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => frontInputRef.current?.click()}
-                      className="w-full h-44 rounded-2xl border-2 border-dashed border-white/20 hover:border-[#c5a880] bg-[#111c23]/60 hover:bg-[#111c23] transition-all flex flex-col items-center justify-center p-4 text-center group cursor-pointer"
-                    >
-                      <div className="w-12 h-12 rounded-full bg-white/5 group-hover:bg-[#c5a880]/20 flex items-center justify-center text-gray-400 group-hover:text-[#c5a880] mb-2 transition-colors">
-                        <Upload className="w-6 h-6" />
-                      </div>
-                      <span className="text-xs font-bold text-white group-hover:text-[#c5a880]">
-                        Ön Yüzü Yükle
-                      </span>
-                      <span className="text-[11px] text-gray-500 mt-1">
-                        Fotoğraf çekin veya galeriden seçin (PNG, JPG)
-                      </span>
-                    </button>
-                  )}
-                </div>
 
-                {/* Ehliyet Arka Yüz */}
-                <div>
-                  <label className="block text-xs font-semibold text-gray-300 mb-2 flex items-center justify-between">
-                    <span>Ehliyet ARKA Yüzü <span className="text-[#c5a880]">*</span></span>
-                    {backFile && <span className="text-[11px] text-[#74b382] font-normal">✓ Seçildi</span>}
-                  </label>
-
-                  <input
-                    type="file"
-                    ref={backInputRef}
-                    accept="image/*,application/pdf"
-                    className="hidden"
-                    onChange={handleBackFileChange}
-                  />
-
-                  {backPreview ? (
-                    <div className="relative rounded-2xl overflow-hidden border border-[#c5a880]/50 bg-black/50 h-44 group">
-                      <Image
-                        src={backPreview}
-                        alt="Ehliyet Arka Yüz"
-                        fill
-                        className="object-contain p-2"
+                    {/* Arka Yüz */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                        Ehliyet Arka Yüzü *
+                      </label>
+                      <input
+                        ref={backInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleBackFileChange}
+                        className="hidden"
                       />
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-3">
+
+                      {backPreview ? (
+                        <div className="relative rounded-xl border border-gray-200 bg-[#f8faf8] p-3 flex items-center gap-3">
+                          <div className="relative w-16 h-12 rounded-lg overflow-hidden shrink-0 border border-gray-200">
+                            <Image
+                              src={backPreview}
+                              alt="Ehliyet Arka Yüz"
+                              fill
+                              className="object-cover"
+                              unoptimized
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-[#222222] truncate">
+                              {backFile?.name}
+                            </p>
+                            <p className="text-[11px] text-[#285735] font-semibold flex items-center gap-1 mt-0.5">
+                              <CheckCircle2 className="w-3 h-3" /> Yüklendi
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setBackFile(null);
+                              setBackPreview(null);
+                            }}
+                            className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition-colors"
+                            title="Kaldır"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
                         <button
                           type="button"
                           onClick={() => backInputRef.current?.click()}
-                          className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg text-xs font-medium"
+                          className="w-full py-6 px-4 rounded-xl border border-dashed border-gray-300 hover:border-[#285735] bg-[#fbfcfb] hover:bg-[#f4f7f4] transition-all flex flex-col items-center justify-center text-center gap-2 group cursor-pointer"
                         >
-                          Değiştir
+                          <Camera className="w-6 h-6 text-gray-400 group-hover:text-[#285735] transition-colors" />
+                          <span className="text-xs font-semibold text-[#444444] group-hover:text-[#1a3822]">
+                            Arka Yüz Fotoğrafı Seç
+                          </span>
+                          <span className="text-[11px] text-gray-400">
+                            JPG, PNG veya PDF
+                          </span>
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setBackFile(null);
-                            setBackPreview(null);
-                          }}
-                          className="p-1.5 bg-red-500/20 text-red-300 hover:bg-red-500/30 rounded-lg text-xs"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <div className="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded text-[10px] text-gray-300">
-                        Arka Yüz
-                      </div>
+                      )}
                     </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => backInputRef.current?.click()}
-                      className="w-full h-44 rounded-2xl border-2 border-dashed border-white/20 hover:border-[#c5a880] bg-[#111c23]/60 hover:bg-[#111c23] transition-all flex flex-col items-center justify-center p-4 text-center group cursor-pointer"
-                    >
-                      <div className="w-12 h-12 rounded-full bg-white/5 group-hover:bg-[#c5a880]/20 flex items-center justify-center text-gray-400 group-hover:text-[#c5a880] mb-2 transition-colors">
-                        <Upload className="w-6 h-6" />
-                      </div>
-                      <span className="text-xs font-bold text-white group-hover:text-[#c5a880]">
-                        Arka Yüzü Yükle
-                      </span>
-                      <span className="text-[11px] text-gray-500 mt-1">
-                        Fotoğraf çekin veya galeriden seçin (PNG, JPG)
-                      </span>
-                    </button>
-                  )}
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            {/* SECTION 5: Ek Notlar */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-                Eklemek İstediğiniz Notlar veya Özel Durumlar
-              </label>
-              <textarea
-                rows={3}
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Örn: Hafta sonları ve gece vardiyalarında da çalışabilirim. Kendi temiz takım elbisem mevcuttur."
-                className="w-full bg-[#111c23] border border-white/10 rounded-xl p-3.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#c5a880] resize-y"
-              />
-            </div>
+                {/* Section 5: Ek Notlar */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                    Ek Notlar veya Belirtmek İstedikleriniz (Opsiyonel)
+                  </label>
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    rows={3}
+                    placeholder="Kullandığınız araç modelleri, müsaitlik saatleriniz veya eklemek istediğiniz diğer detaylar..."
+                    className="w-full px-4 py-3 rounded-xl bg-[#f8faf8] border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] focus:bg-white text-sm transition-all resize-y"
+                  />
+                </div>
 
-            {/* Submit Action Bar */}
-            <div className="pt-4 border-t border-white/10">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-4 bg-gradient-to-r from-[#c5a880] to-[#b0926a] hover:from-[#d4b78f] hover:to-[#c5a880] text-black font-extrabold text-sm uppercase tracking-wider rounded-2xl shadow-xl shadow-[#c5a880]/20 transition-all flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin mr-3" />
-                    <span>{uploadProgress || "Başvuru Gönderiliyor..."}</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Başvuruyu Tamamla &amp; Gönder</span>
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </>
-                )}
-              </button>
-              <p className="text-center text-[11px] text-gray-500 mt-3">
-                🔒 Bilgileriniz ELMIA DMC bünyesinde gizli tutulur ve sadece şoförlük operasyonları değerlendirmesinde kullanılır.
-              </p>
+                {/* Submit Button & Progress */}
+                <div className="pt-4 border-t border-[#e7ede7] flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <p className="text-xs text-[#666666]">
+                    * İşaretli alanların doldurulması zorunludur.
+                  </p>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full sm:w-auto px-8 py-3.5 bg-[#285735] hover:bg-[#1f4429] text-white font-bold text-sm rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>{uploadProgress || "Gönderiliyor..."}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        <span>Başvuruyu Gönder</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
-          </form>
-        )}
-      </main>
+          )}
+        </div>
+      </section>
     </div>
   );
 }
