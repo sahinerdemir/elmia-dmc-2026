@@ -25,6 +25,7 @@ interface NavSubItem {
 
 interface NavItem {
   name: string;
+  shortName?: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   children?: NavSubItem[];
@@ -34,6 +35,91 @@ export default function CRMSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [counts, setCounts] = useState({
+    proposals: 0,
+    proposalsArchive: 0,
+    contacts: 0,
+    contactsArchive: 0,
+    drivers: 0,
+    driversArchive: 0,
+  });
+
+  // Fetch record counts for sidebar badges
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchCounts() {
+      try {
+        const [leadsRes, driversRes] = await Promise.all([
+          fetch("/api/crm/leads", { cache: "no-store" }),
+          fetch(`/api/crm/drivers?t=${Date.now()}`, { cache: "no-store" })
+        ]);
+
+        let pCount = 0;
+        let pArch = 0;
+        let cCount = 0;
+        let cArch = 0;
+        let dCount = 0;
+        let dArch = 0;
+
+        if (leadsRes.ok) {
+          const lData = await leadsRes.json();
+          if (Array.isArray(lData.leads)) {
+            lData.leads.forEach((l: any) => {
+              if (l.isTrashed || l.status === "trashed") return;
+              const isArchived = l.status === "rejected" || l.status === "archived";
+              if (l.category === "proposal") {
+                if (isArchived) pArch++;
+                else pCount++;
+              } else if (l.category === "contact") {
+                if (isArchived) cArch++;
+                else cCount++;
+              }
+            });
+          }
+        }
+
+        if (driversRes.ok) {
+          const dData = await driversRes.json();
+          if (Array.isArray(dData.drivers)) {
+            dData.drivers.forEach((d: any) => {
+              if (d.status === "rejected") {
+                dArch++;
+              } else {
+                dCount++;
+              }
+            });
+          }
+        }
+
+        if (isMounted) {
+          setCounts({
+            proposals: pCount,
+            proposalsArchive: pArch,
+            contacts: cCount,
+            contactsArchive: cArch,
+            drivers: dCount,
+            driversArchive: dArch,
+          });
+        }
+      } catch (e) {
+        console.error("Failed to fetch sidebar counts:", e);
+      }
+    }
+
+    fetchCounts();
+
+    const handleFocus = () => fetchCounts();
+    const handleCustomUpdate = () => fetchCounts();
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("crm_records_updated", handleCustomUpdate);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("crm_records_updated", handleCustomUpdate);
+    };
+  }, [pathname]);
 
   // Close mobile drawer on route change
   useEffect(() => {
@@ -68,33 +154,36 @@ export default function CRMSidebar() {
   };
 
   const navItems: NavItem[] = [
-    { name: "Dashboard", href: "/crm", icon: LayoutDashboard },
+    { name: "Dashboard", shortName: "Dashboard", href: "/crm", icon: LayoutDashboard },
     { 
-      name: "Proposals", 
+      name: `Proposals (${counts.proposals})`, 
+      shortName: "Proposals",
       href: "/crm/proposals", 
       icon: FileText,
       children: [
-        { name: "Archive", href: "/crm/proposals/archive" }
+        { name: `Archive (${counts.proposalsArchive})`, href: "/crm/proposals/archive" }
       ]
     },
     { 
-      name: "Contacts", 
+      name: `Contacts (${counts.contacts})`, 
+      shortName: "Contacts",
       href: "/crm/contacts", 
       icon: Users,
       children: [
-        { name: "Archive", href: "/crm/contacts/archive" }
+        { name: `Archive (${counts.contactsArchive})`, href: "/crm/contacts/archive" }
       ]
     },
     { 
-      name: "Drivers", 
+      name: `Drivers (${counts.drivers})`, 
+      shortName: "Drivers",
       href: "/crm/drivers", 
       icon: Car,
       children: [
-        { name: "Archive", href: "/crm/drivers/archive" }
+        { name: `Archive (${counts.driversArchive})`, href: "/crm/drivers/archive" }
       ]
     },
-    { name: "Trash", href: "/crm/trash", icon: Trash2 },
-    { name: "Settings", href: "/crm/settings", icon: Settings },
+    { name: "Trash", shortName: "Trash", href: "/crm/trash", icon: Trash2 },
+    { name: "Settings", shortName: "Settings", href: "/crm/settings", icon: Settings },
   ];
 
   return (
@@ -305,14 +394,14 @@ export default function CRMSidebar() {
           const isActive = pathname === item.href || (item.href !== "/crm" && pathname.startsWith(item.href));
           return (
             <Link
-              key={item.name}
+              key={item.href}
               href={item.href}
               className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
                 isActive ? "text-[#74b382] font-semibold" : "text-gray-400 hover:text-gray-200"
               }`}
             >
               <item.icon className={`w-5 h-5 ${isActive ? "text-[#74b382]" : "text-gray-400"}`} />
-              <span className="text-[10px] mt-1">{item.name}</span>
+              <span className="text-[10px] mt-1">{item.shortName || item.name}</span>
             </Link>
           );
         })}
