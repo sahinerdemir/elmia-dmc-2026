@@ -13,7 +13,8 @@ import {
   Menu,
   X,
   ChevronRight,
-  Trash2
+  Trash2,
+  Car
 } from "lucide-react";
 
 export default function CRMSidebar() {
@@ -57,6 +58,7 @@ export default function CRMSidebar() {
     { name: "Dashboard", href: "/crm", icon: LayoutDashboard },
     { name: "Proposals", href: "/crm/proposals", icon: FileText },
     { name: "Contacts", href: "/crm/contacts", icon: Users },
+    { name: "Drivers", href: "/crm/drivers", icon: Car },
     { name: "Trash", href: "/crm/trash", icon: Trash2 },
     { name: "Settings", href: "/crm/settings", icon: Settings },
   ];

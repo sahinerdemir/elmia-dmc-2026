@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { Lead } from "@/types/crm";
+import { DriverApplication } from "@/types/driver";
 
 const apiKey = process.env.RESEND_API_KEY;
 const resend = apiKey ? new Resend(apiKey) : null;
@@ -380,6 +381,159 @@ export async function sendClientReplyEmail({
   } catch (err: unknown) {
     const errStr = err instanceof Error ? err.message : String(err);
     console.error("[sendClientReplyEmail] Unexpected error:", errStr);
+    return { success: false, error: errStr };
+  }
+}
+
+/**
+ * Sends an email notification to info@elmiadmc.com when a new chauffeur applies.
+ */
+export async function sendDriverNotificationEmail(
+  driver: DriverApplication
+): Promise<SendEmailResult> {
+  if (!resend) {
+    console.warn("[EmailService] Resend API key missing. Skipping driver email notification.");
+    return { success: false, error: "Resend API key not configured" };
+  }
+
+  const subject = `[ELMIA DMC] Yeni Şoför Başvurusu: ${driver.firstName} ${driver.lastName} (${driver.origin})`;
+  const crmUrl = `https://elmiadmc.com/crm/drivers/${driver.id}`;
+
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>${subject}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #0b0f17; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e2e8f0;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0b0f17; padding: 32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 620px; background-color: #111827; border: 1px solid #1f2937; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="padding: 28px 32px; background: linear-gradient(135deg, #182234 0%, #0b0f17 100%); border-bottom: 2px solid #c5a880;">
+              <span style="font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase; color: #c5a880; font-weight: 700; display: block; margin-bottom: 6px;">
+                ELMIA DMC • CHAUFFEUR RECRUITMENT
+              </span>
+              <h1 style="margin: 0; font-size: 22px; font-weight: 700; color: #ffffff;">
+                New Chauffeur Application
+              </h1>
+            </td>
+          </tr>
+
+          <!-- Driver Details Table -->
+          <tr>
+            <td style="padding: 28px 32px;">
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 24px;">
+                <tr>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; width: 38%; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Adı Soyadı</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; font-weight: 700; color: #ffffff; font-size: 15px;">${driver.firstName} ${driver.lastName}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Telefon / WhatsApp</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #38bdf8; font-size: 14px; font-weight: 600;">
+                    <a href="tel:${driver.phone}" style="color: #38bdf8; text-decoration: none;">${driver.phone}</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">E-posta</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #c5a880; font-size: 14px;">
+                    <a href="mailto:${driver.email}" style="color: #c5a880; text-decoration: none;">${driver.email}</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Nereli Olduğu</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px; font-weight: 600;">${driver.origin}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">ABD'de Yaşama Süresi</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px;">${driver.yearsInUS} yıl</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Şoförlük Tecrübesi</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px; font-weight: 600;">${driver.drivingExperienceYears} yıl</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Ehliyet No & Eyalet</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px; font-family: monospace;">${driver.licenseNumber} (${driver.licenseState || "FL"})</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Çocuk Durumu</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px;">
+                    ${driver.hasChildren ? `Var (${driver.childrenDetails || "Belirtildi"})` : "Yok"}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">SSN Durumu</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px;">
+                    ${driver.hasSSN ? `Mevcut (${driver.ssn || "***"})` : "Yok / Belirtilmedi"}
+                  </td>
+                </tr>
+                ${driver.languages ? `
+                <tr>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Diller</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px;">${driver.languages}</td>
+                </tr>` : ""}
+              </table>
+
+              <!-- License Photos Links -->
+              <div style="background-color: #0d121c; border: 1px solid #1e293b; border-left: 3px solid #c5a880; border-radius: 6px; padding: 16px 20px; margin-bottom: 24px;">
+                <div style="font-size: 12px; font-weight: 700; color: #c5a880; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">
+                  Ehliyet Fotoğrafları (Önlü / Arkalı)
+                </div>
+                <div style="font-size: 13px; color: #e2e8f0;">
+                  <p style="margin: 0 0 6px 0;">
+                    🪪 <strong>Ön Yüz:</strong> <a href="${driver.licenseFrontUrl}" target="_blank" style="color: #38bdf8; text-decoration: underline;">Ehliyet Ön Yüzünü Görüntüle →</a>
+                  </p>
+                  <p style="margin: 0;">
+                    🪪 <strong>Arka Yüz:</strong> <a href="${driver.licenseBackUrl}" target="_blank" style="color: #38bdf8; text-decoration: underline;">Ehliyet Arka Yüzünü Görüntüle →</a>
+                  </p>
+                </div>
+              </div>
+
+              <!-- Button -->
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center">
+                    <a href="${crmUrl}" style="display: inline-block; background: linear-gradient(135deg, #c5a880 0%, #a48458 100%); color: #0a0d12; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none; padding: 14px 32px; border-radius: 8px;">
+                      Open Driver in CRM Panel →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: DEFAULT_SENDER,
+      to: [PRIMARY_RECIPIENT],
+      replyTo: driver.email,
+      subject,
+      html
+    });
+
+    if (error) {
+      console.error("[sendDriverNotificationEmail] Resend error:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, messageId: data?.id, deliveredTo: PRIMARY_RECIPIENT };
+  } catch (err: unknown) {
+    const errStr = err instanceof Error ? err.message : String(err);
+    console.error("[sendDriverNotificationEmail] Error:", errStr);
     return { success: false, error: errStr };
   }
 }
