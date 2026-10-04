@@ -36,7 +36,7 @@ export default function CRMDriverListPage() {
   const fetchDrivers = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/crm/drivers");
+      const res = await fetch(`/api/crm/drivers?t=${Date.now()}`, { cache: "no-store" });
       const data = await res.json();
       if (data.success && Array.isArray(data.drivers)) {
         setDrivers(data.drivers);
@@ -50,6 +50,10 @@ export default function CRMDriverListPage() {
 
   useEffect(() => {
     fetchDrivers();
+
+    const handleFocus = () => fetchDrivers();
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
   }, []);
 
   const handleStatusChange = async (id: string, newStatus: DriverStatus) => {

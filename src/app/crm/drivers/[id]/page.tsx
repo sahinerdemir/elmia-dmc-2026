@@ -55,7 +55,7 @@ export default function DriverDetailPage({ params }: { params: Promise<{ id: str
     const fetchDriver = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch(`/api/crm/drivers/${id}`);
+        const res = await fetch(`/api/crm/drivers/${id}?t=${Date.now()}`, { cache: "no-store" });
         const data = await res.json();
         if (data.success && data.driver) {
           setDriver(data.driver);

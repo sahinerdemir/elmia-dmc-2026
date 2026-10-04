@@ -14,6 +14,9 @@ function isAuthorized(req: NextRequest): boolean {
   return false;
 }
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(req: NextRequest) {
   if (!isAuthorized(req)) {
     return NextResponse.json(
@@ -24,11 +27,20 @@ export async function GET(req: NextRequest) {
 
   try {
     const drivers = await getAllDrivers();
-    return NextResponse.json({
-      success: true,
-      drivers,
-      count: drivers.length
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        drivers,
+        count: drivers.length
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          "Pragma": "no-cache",
+          "Expires": "0"
+        }
+      }
+    );
   } catch (error) {
     console.error("[CrmDriversApi] Error fetching drivers:", error);
     return NextResponse.json(

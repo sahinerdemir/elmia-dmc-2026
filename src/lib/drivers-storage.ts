@@ -40,8 +40,32 @@ async function loadFromRemote(): Promise<DriverApplication[]> {
       // Table may not exist yet, fallback to Storage
     }
 
-    // 2. Try JSON file in Storage bucket `driver-documents`
+    // 2. Try JSON file in Storage bucket `driver-documents` (bypass Cloudflare/CDN cache)
     try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+      if (supabaseUrl && supabaseKey) {
+        const fileUrl = `${supabaseUrl}/storage/v1/object/authenticated/${STORAGE_BUCKET}/${STORAGE_FILE_PATH}?t=${Date.now()}`;
+        const res = await fetch(fileUrl, {
+          headers: {
+            Authorization: `Bearer ${supabaseKey}`,
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache"
+          },
+          cache: "no-store"
+        });
+
+        if (res.ok) {
+          const parsed = await res.json();
+          if (Array.isArray(parsed)) {
+            global.__ELMIA_DRIVERS_STORE = parsed;
+            return parsed;
+          }
+        }
+      }
+
+      // Secondary fallback to standard SDK download
       const { data, error } = await supabase.storage
         .from(STORAGE_BUCKET)
         .download(STORAGE_FILE_PATH);
@@ -75,7 +99,8 @@ async function persistDrivers(drivers: DriverApplication[]): Promise<void> {
         .from(STORAGE_BUCKET)
         .upload(STORAGE_FILE_PATH, jsonContent, {
           contentType: "application/json",
-          upsert: true
+          upsert: true,
+          cacheControl: "0" // Prevent CDN/Cloudflare from caching this file
         });
     } catch (err) {
       console.error("[DriversStorage] Error persisting to storage bucket:", err);

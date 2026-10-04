@@ -20,6 +20,9 @@ function isAuthorized(req: NextRequest): boolean {
   return false;
 }
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -41,7 +44,16 @@ export async function GET(
     );
   }
 
-  return NextResponse.json({ success: true, driver });
+  return NextResponse.json(
+    { success: true, driver },
+    {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+      }
+    }
+  );
 }
 
 export async function PATCH(
