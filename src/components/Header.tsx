@@ -247,7 +247,7 @@ export default function Header() {
               )}
             </div>
 
-            {/* Programs Dropdown */}
+            {/* VIP Programs Dropdown */}
             <div
               className="relative"
               onMouseEnter={() => setVipOpen(true)}
@@ -263,7 +263,7 @@ export default function Header() {
                     : "text-[#333333] hover:text-[#285735]"
                 }`}
               >
-                Programs
+                VIP Programs
               </Link>
 
               {vipOpen && (
@@ -596,7 +596,7 @@ export default function Header() {
               )}
             </div>
 
-            {/* Accordion: Programs */}
+            {/* Accordion: VIP Programs */}
             <div className="rounded-xl bg-white overflow-hidden transition-all">
               <button
                 type="button"
@@ -606,7 +606,7 @@ export default function Header() {
               >
                 <div className="flex items-center space-x-2.5">
                   <span className="text-lg font-semibold text-[#1a3822]">
-                    Programs
+                    VIP Programs
                   </span>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#285735]/10 text-[#285735]">
                     {VIP_PROGRAMS.length}
