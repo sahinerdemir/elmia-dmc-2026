@@ -499,7 +499,7 @@ export default function Header() {
                   : "text-[#285735] hover:text-[#1e4329]"
               }`}
             >
-              Request a Proposal
+              Request Proposal
             </Link>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
