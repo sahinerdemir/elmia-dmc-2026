@@ -263,7 +263,7 @@ export default function Header() {
                     : "text-[#333333] hover:text-[#285735]"
                 }`}
               >
-                VIP Programs
+                Programs
               </Link>
 
               {vipOpen && (
@@ -606,7 +606,7 @@ export default function Header() {
               >
                 <div className="flex items-center space-x-2.5">
                   <span className="text-lg font-semibold text-[#1a3822]">
-                    VIP Programs
+                    Programs
                   </span>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#285735]/10 text-[#285735]">
                     {VIP_PROGRAMS.length}
