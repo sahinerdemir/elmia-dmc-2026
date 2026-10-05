@@ -484,7 +484,7 @@ export default function Header() {
                   : "text-white bg-[#285735] hover:bg-[#1e4329] shadow-md shadow-[#285735]/20 hover:shadow-[#285735]/40"
               }`}
             >
-              Request Proposal
+              Request a Proposal
               <ArrowRight className="ml-1.5 w-3.5 h-3.5" />
             </Link>
           </div>
@@ -499,7 +499,7 @@ export default function Header() {
                   : "text-[#285735] hover:text-[#1e4329]"
               }`}
             >
-              Request Proposal
+              Request a Proposal
             </Link>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
