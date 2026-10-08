@@ -56,12 +56,12 @@ export async function generateMetadata({ params }: EventPageProps): Promise<Meta
       "executive chauffeur USA"
     ],
     alternates: {
-      canonical: `https://elmiadmc.com/events/${event.slug}`,
+      canonical: `https://www.elmiadmc.com/events/${event.slug}`,
     },
     openGraph: {
       title: event.metaTitle,
       description: event.metaDescription,
-      url: `https://elmiadmc.com/events/${event.slug}`,
+      url: `https://www.elmiadmc.com/events/${event.slug}`,
       siteName: "ELMIA DMC",
       images: [
         {
@@ -90,7 +90,7 @@ export default async function EventDetailPage({ params }: EventPageProps) {
     "@graph": [
       {
         "@type": "Event",
-        "@id": `https://elmiadmc.com/events/${event.slug}#event`,
+        "@id": `https://www.elmiadmc.com/events/${event.slug}#event`,
         "name": event.title,
         "description": event.overview,
         "startDate": "2026-01-01",
@@ -113,12 +113,12 @@ export default async function EventDetailPage({ params }: EventPageProps) {
       },
       {
         "@type": "Service",
-        "@id": `https://elmiadmc.com/events/${event.slug}#service`,
+        "@id": `https://www.elmiadmc.com/events/${event.slug}#service`,
         "name": `Corporate Hospitality & Logistics for ${event.title}`,
         "provider": {
           "@type": "Organization",
           "name": "ELMIA DMC & Executive Chauffeur Services",
-          "url": "https://elmiadmc.com"
+          "url": "https://www.elmiadmc.com"
         },
         "areaServed": event.city,
         "description": `Turnkey corporate travel, VIP passes, hotel blocks, and executive chauffeur fleets for ${event.title} in ${event.city}.`,

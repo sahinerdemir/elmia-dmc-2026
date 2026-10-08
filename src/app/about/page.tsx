@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   title: "About ELMIA | USA Destination Management Company & Executive Fleet",
   description: "Learn about ELMIA DMC. Nationwide destination management company with 30+ years of global travel and logistics experience (founded in 1994), headquartered at Miami Opa-locka Executive Airport (OPF Hangar 5) with key hubs in New York, Chicago, and Los Angeles.",
   alternates: {
-    canonical: "https://elmiadmc.com/about"
+    canonical: "https://www.elmiadmc.com/about"
   },
   keywords: [
     "About ELMIA DMC",

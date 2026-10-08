@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title: "Executive Fleet Specifications & Capacity | ELMIA DMC Miami",
   description: "Explore ELMIA's late-model executive black fleet: Cadillac Escalade ESVs, Mercedes-Benz S-Class, Jet Class Sprinters, private aviation network, and luxury yacht charters.",
   alternates: {
-    canonical: "https://elmiadmc.com/fleet"
+    canonical: "https://www.elmiadmc.com/fleet"
   },
   keywords: [
     "Cadillac Escalade ESV chauffeur",

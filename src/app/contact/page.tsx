@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   title: "Contact Operations Desk | ELMIA USA Destination Management",
   description: "Get in touch with ELMIA DMC operations desk. 24/7 corporate dispatch across Miami, New York, Chicago, Los Angeles, and nationwide. Headquarters at Miami Opa-locka Airport (OPF Hangar 5).",
   alternates: {
-    canonical: "https://elmiadmc.com/contact"
+    canonical: "https://www.elmiadmc.com/contact"
   },
   keywords: [
     "contact ELMIA DMC",

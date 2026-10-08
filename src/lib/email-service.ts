@@ -57,7 +57,7 @@ export async function sendLeadNotificationEmail(
         lead.topic ? ` — ${lead.topic}` : ""
       }`;
 
-  const crmUrl = `https://elmiadmc.com/crm/${
+  const crmUrl = `https://www.elmiadmc.com/crm/${
     isProposal ? "proposals" : "contacts"
   }`;
 
@@ -332,7 +332,7 @@ export async function sendClientReplyEmail({
                     </div>
                     <div style="font-size: 12px; color: #0f172a; line-height: 1.6;">
                       ✉️ <a href="mailto:info@elmiadmc.com" style="color: #a48458; text-decoration: none; font-weight: 600;">info@elmiadmc.com</a>
-                      &nbsp;|&nbsp; 🌐 <a href="https://elmiadmc.com" style="color: #a48458; text-decoration: none; font-weight: 600;">elmiadmc.com</a>
+                      &nbsp;|&nbsp; 🌐 <a href="https://www.elmiadmc.com" style="color: #a48458; text-decoration: none; font-weight: 600;">elmiadmc.com</a>
                     </div>
                   </td>
                 </tr>
@@ -397,7 +397,7 @@ export async function sendDriverNotificationEmail(
   }
 
   const subject = `[ELMIA DMC] Yeni Şoför Başvurusu: ${driver.firstName} ${driver.lastName} (${driver.origin})`;
-  const crmUrl = `https://elmiadmc.com/crm/drivers/${driver.id}`;
+  const crmUrl = `https://www.elmiadmc.com/crm/drivers/${driver.id}`;
 
   const html = `
 <!DOCTYPE html>

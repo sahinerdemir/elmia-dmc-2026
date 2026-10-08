@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title: "Signature Travel Experiences & VIP Tours | ELMIA DMC Miami",
   description: "Curated luxury travel itineraries across the United States: Eagles Las Vegas VIP, Florida Dream, Pearls of America Coast-to-Coast, and Western USA Horizons.",
   alternates: {
-    canonical: "https://elmiadmc.com/experiences"
+    canonical: "https://www.elmiadmc.com/experiences"
   },
   keywords: [
     "USA Luxury Tours",

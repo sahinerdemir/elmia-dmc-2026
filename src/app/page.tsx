@@ -10,7 +10,7 @@ export const metadata = {
   description:
     "ELMIA provides premier destination management, executive chauffeured transit, and VIP summit logistics across Miami, New York, Chicago, and Los Angeles.",
   alternates: {
-    canonical: "https://elmiadmc.com"
+    canonical: "https://www.elmiadmc.com"
   },
   keywords: [
     "Miami DMC",

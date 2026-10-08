@@ -5,7 +5,7 @@ import { EXPERIENCES } from "@/data/experiences";
 import { MAJOR_EVENTS } from "@/data/events";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://elmiadmc.com";
+  const baseUrl = "https://www.elmiadmc.com";
   const now = new Date();
 
   // Core Landing & Service Hub Pages
@@ -48,6 +48,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${baseUrl}/fleet`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/drivers`,
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.85,

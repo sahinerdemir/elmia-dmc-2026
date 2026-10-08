@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: `${program.title} | VIP Concierge | ELMIA DMC`,
     description: program.description,
     alternates: {
-      canonical: `https://elmiadmc.com/vip-programs/${program.slug}`
+      canonical: `https://www.elmiadmc.com/vip-programs/${program.slug}`
     },
     keywords: [
       program.title,
@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title: `${program.title} | VIP Concierge | ELMIA DMC`,
       description: program.description,
-      url: `https://elmiadmc.com/vip-programs/${program.slug}`,
+      url: `https://www.elmiadmc.com/vip-programs/${program.slug}`,
       images: [{ url: program.heroImage }]
     }
   };
@@ -62,8 +62,8 @@ export default async function VIPProgramDetailPage({ params }: PageProps) {
   const vipSchema = {
     "@context": "https://schema.org",
     "@type": "Service",
-    "@id": `https://elmiadmc.com/vip-programs/${program.slug}#service`,
-    "url": `https://elmiadmc.com/vip-programs/${program.slug}`,
+    "@id": `https://www.elmiadmc.com/vip-programs/${program.slug}#service`,
+    "url": `https://www.elmiadmc.com/vip-programs/${program.slug}`,
     "name": program.title,
     "serviceType": "VIP Lifestyle Concierge & Exclusive Access",
     "description": program.description,
@@ -76,9 +76,9 @@ export default async function VIPProgramDetailPage({ params }: PageProps) {
     ],
     "provider": {
       "@type": "TravelAgency",
-      "@id": "https://elmiadmc.com/#localbusiness",
+      "@id": "https://www.elmiadmc.com/#localbusiness",
       "name": "ELMIA DMC (Elegant Miami Adventures LLC)",
-      "url": "https://elmiadmc.com",
+      "url": "https://www.elmiadmc.com",
       "telephone": "+1-786-677-7333",
       "address": {
         "@type": "PostalAddress",

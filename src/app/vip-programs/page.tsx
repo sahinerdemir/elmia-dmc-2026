@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title: "VIP Lifestyle & Concierge Programs | ELMIA DMC Miami",
   description: "Bespoke Miami VIP concierge services: private yacht charters, luxury villa buyouts, Michelin dining reservations, F1 paddock access, and executive protection.",
   alternates: {
-    canonical: "https://elmiadmc.com/vip-programs"
+    canonical: "https://www.elmiadmc.com/vip-programs"
   },
   keywords: [
     "VIP Lifestyle Programs",

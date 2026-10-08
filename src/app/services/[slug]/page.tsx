@@ -88,7 +88,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: `${service.title} | ELMIA DMC`,
     description: service.metaDescription,
     alternates: {
-      canonical: `https://elmiadmc.com/services/${service.slug}`
+      canonical: `https://www.elmiadmc.com/services/${service.slug}`
     },
     keywords: [
       service.title,
@@ -101,7 +101,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title: `${service.title} | ELMIA DMC`,
       description: service.metaDescription,
-      url: `https://elmiadmc.com/services/${service.slug}`,
+      url: `https://www.elmiadmc.com/services/${service.slug}`,
       images: [{ url: service.heroImage }]
     }
   };
@@ -120,8 +120,8 @@ export default async function ServiceDetailPage({ params }: PageProps) {
     "@graph": [
       {
         "@type": "Service",
-        "@id": `https://elmiadmc.com/services/${service.slug}#service`,
-        "url": `https://elmiadmc.com/services/${service.slug}`,
+        "@id": `https://www.elmiadmc.com/services/${service.slug}#service`,
+        "url": `https://www.elmiadmc.com/services/${service.slug}`,
         "name": service.title,
         "serviceType": service.title,
         "description": service.aeoSummary,
@@ -147,9 +147,9 @@ export default async function ServiceDetailPage({ params }: PageProps) {
         },
         "provider": {
           "@type": "TravelAgency",
-          "@id": "https://elmiadmc.com/#localbusiness",
+          "@id": "https://www.elmiadmc.com/#localbusiness",
           "name": "ELMIA DMC (Elegant Miami Adventures LLC)",
-          "url": "https://elmiadmc.com",
+          "url": "https://www.elmiadmc.com",
           "telephone": "+1-786-677-7333",
           "address": {
             "@type": "PostalAddress",
@@ -165,7 +165,7 @@ export default async function ServiceDetailPage({ params }: PageProps) {
         ? [
             {
               "@type": "FAQPage",
-              "@id": `https://elmiadmc.com/services/${service.slug}#faq`,
+              "@id": `https://www.elmiadmc.com/services/${service.slug}#faq`,
               "mainEntity": service.faqs.map((faq) => ({
                 "@type": "Question",
                 "name": faq.question,

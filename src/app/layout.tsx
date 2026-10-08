@@ -3,7 +3,7 @@ import "./globals.css";
 import SiteLayoutWrapper from "@/components/SiteLayoutWrapper";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://elmiadmc.com"),
+  metadataBase: new URL("https://www.elmiadmc.com"),
   title: {
     default: "USA Destination Management & Executive Chauffeur Services - ELMIA",
     template: "%s | ELMIA DMC"
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://elmiadmc.com",
+    url: "https://www.elmiadmc.com",
     title: "USA Destination Management & Executive Chauffeur Services - ELMIA",
     description: "ELMIA provides premier destination management, executive chauffeured transit, and VIP summit logistics across Miami, New York, Chicago, and Los Angeles.",
     siteName: "ELMIA",
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     apple: "/images/favicon.png"
   },
   alternates: {
-    canonical: "https://elmiadmc.com"
+    canonical: "https://www.elmiadmc.com"
   },
   robots: {
     index: true,
@@ -77,22 +77,22 @@ export default function RootLayout({
     "@graph": [
       {
         "@type": "WebSite",
-        "@id": "https://elmiadmc.com/#website",
-        "url": "https://elmiadmc.com/",
+        "@id": "https://www.elmiadmc.com/#website",
+        "url": "https://www.elmiadmc.com/",
         "name": "ELMIA Destination Management Company",
         "alternateName": ["ELMIA DMC", "ELMIA USA", "ELMIA Executive Transportation"],
         "description": "USA Destination Management Company specializing in corporate travel, executive motorcades, VIP hospitality, and airport FBO tarmac transfers across Miami, New York, Chicago, Los Angeles, and nationwide.",
         "publisher": {
-          "@id": "https://elmiadmc.com/#organization"
+          "@id": "https://www.elmiadmc.com/#organization"
         }
       },
       {
         "@type": "Organization",
-        "@id": "https://elmiadmc.com/#organization",
+        "@id": "https://www.elmiadmc.com/#organization",
         "name": "ELMIA (Elegant Miami Adventures LLC)",
         "legalName": "Elegant Miami Adventures LLC",
-        "url": "https://elmiadmc.com/",
-        "logo": "https://elmiadmc.com/images/elmia-dmc-logo.png",
+        "url": "https://www.elmiadmc.com/",
+        "logo": "https://www.elmiadmc.com/images/elmia-dmc-logo.png",
         "email": "info@elmiadmc.com",
         "telephone": "+1-786-677-7333",
         "description": "ELMIA is a premier full-service Destination Management Company (DMC) operating nationwide across the United States, anchored by operational headquarters at Miami Opa-locka Executive Airport (OPF Hangar 5) and primary service hubs in Miami, New York, Chicago, and Los Angeles. Backed by 30+ years of global travel and logistics experience since 1994, ELMIA specializes in corporate group logistics, executive transportation, luxury accommodations, bilingual on-site staffing, and VIP hospitality programs.",
@@ -130,12 +130,12 @@ export default function RootLayout({
       },
       {
         "@type": "TravelAgency",
-        "@id": "https://elmiadmc.com/#localbusiness",
+        "@id": "https://www.elmiadmc.com/#localbusiness",
         "name": "ELMIA Destination Management Company",
-        "url": "https://elmiadmc.com/",
+        "url": "https://www.elmiadmc.com/",
         "telephone": "+1-786-677-7333",
         "priceRange": "$$$",
-        "image": "https://elmiadmc.com/images/elmia-dmc-logo.png",
+        "image": "https://www.elmiadmc.com/images/elmia-dmc-logo.png",
         "address": {
           "@type": "PostalAddress",
           "streetAddress": "Miami Opa-locka Exec. Jet Airport Hangar 5 Suite 128",
@@ -187,7 +187,7 @@ export default function RootLayout({
       },
       {
         "@type": "FAQPage",
-        "@id": "https://elmiadmc.com/#faq",
+        "@id": "https://www.elmiadmc.com/#faq",
         "mainEntity": [
           {
             "@type": "Question",

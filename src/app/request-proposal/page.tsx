@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   title: "Request a Proposal | ELMIA USA Destination Management",
   description: "Request an itemized proposal for corporate summits, executive chauffeured transit, VIP aviation ground logistics, or private villa buyouts in Miami, New York, Chicago, Los Angeles, and nationwide.",
   alternates: {
-    canonical: "https://elmiadmc.com/request-proposal"
+    canonical: "https://www.elmiadmc.com/request-proposal"
   },
   keywords: [
     "request proposal DMC",

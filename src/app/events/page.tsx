@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     "World of Concrete"
   ],
   alternates: {
-    canonical: "https://elmiadmc.com/events"
+    canonical: "https://www.elmiadmc.com/events"
   }
 };
 

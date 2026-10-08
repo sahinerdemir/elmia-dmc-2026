@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title: "DMC Solutions & Corporate Services | ELMIA DMC Miami",
   description: "Explore ELMIA's 6 core B2B destination management solutions: corporate group travel, executive chauffeur services, airport FBO transfers, trade show expo logistics, and diplomatic delegations.",
   alternates: {
-    canonical: "https://elmiadmc.com/services"
+    canonical: "https://www.elmiadmc.com/services"
   },
   keywords: [
     "DMC Solutions USA",

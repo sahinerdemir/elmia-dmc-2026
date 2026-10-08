@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
 ${messageText}
               </div>
               <p style="margin-top: 20px;">
-                <a href="https://elmiadmc.com/crm/${targetLead.category === "proposal" ? "proposals" : "contacts"}/${targetLead.id}" style="background-color: #c5a880; color: #000; padding: 10px 20px; text-decoration: none; font-weight: bold; border-radius: 4px; display: inline-block;">
+                <a href="https://www.elmiadmc.com/crm/${targetLead.category === "proposal" ? "proposals" : "contacts"}/${targetLead.id}" style="background-color: #c5a880; color: #000; padding: 10px 20px; text-decoration: none; font-weight: bold; border-radius: 4px; display: inline-block;">
                   View Conversation in CRM Platform →
                 </a>
               </p>

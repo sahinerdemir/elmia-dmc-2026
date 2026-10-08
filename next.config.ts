@@ -66,6 +66,12 @@ const nextConfig: NextConfig = {
       // Catch-all for old demo posts & service templates
       { source: '/service/:slug', destination: '/services', permanent: true },
       { source: '/experience/:slug', destination: '/experiences', permanent: true },
+      { source: '/portfolio/:slug*', destination: '/services', permanent: true },
+      { source: '/empowering-crypto-innovation-we-connect-every-chain', destination: '/', permanent: true },
+      { source: '/empowering-crypto-innovation-we-connect-every-chain/:path*', destination: '/', permanent: true },
+      { source: '/category/:slug*', destination: '/', permanent: true },
+      { source: '/tag/:slug*', destination: '/', permanent: true },
+      { source: '/author/:slug*', destination: '/', permanent: true },
     ];
   },
 };

@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: experience.metaTitle,
     description: experience.metaDescription,
     alternates: {
-      canonical: `https://elmiadmc.com/experiences/${experience.slug}`
+      canonical: `https://www.elmiadmc.com/experiences/${experience.slug}`
     },
     keywords: [
       experience.title,
@@ -55,7 +55,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title: experience.metaTitle,
       description: experience.metaDescription,
-      url: `https://elmiadmc.com/experiences/${experience.slug}`,
+      url: `https://www.elmiadmc.com/experiences/${experience.slug}`,
       images: [{ url: experience.heroImage }]
     }
   };
@@ -92,7 +92,7 @@ export default async function ExperienceDetailPage({ params }: PageProps) {
     "provider": {
       "@type": "TravelAgency",
       "name": "ELMIA DMC (Elegant Miami Adventures LLC)",
-      "url": "https://elmiadmc.com",
+      "url": "https://www.elmiadmc.com",
       "telephone": "+1-786-677-7333"
     }
   };

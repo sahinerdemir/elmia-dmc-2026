@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   title: "Operational Credentials & Compliance | ELMIA DMC Miami",
   description: "Review ELMIA's regulatory credentials, DOT compliance, FBO tarmac security clearance, diplomatic protocol readiness, and commercial insurance coverage.",
   alternates: {
-    canonical: "https://elmiadmc.com/credentials"
+    canonical: "https://www.elmiadmc.com/credentials"
   },
   keywords: [
     "DOT compliance Miami DMC",
