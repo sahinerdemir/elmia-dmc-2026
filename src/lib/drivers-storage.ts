@@ -133,6 +133,11 @@ interface SupabaseDriverRow {
   ssn?: string;
   license_front_url: string;
   license_back_url: string;
+  has_limo_certified_suv?: boolean;
+  suv_make?: string;
+  suv_model?: string;
+  suv_year?: string;
+  suv_color?: string;
   has_chauffeur_registration?: boolean;
   chauffeur_registration_number?: string;
   chauffeur_registration_expiration_date?: string;
@@ -173,6 +178,11 @@ function mapRowToDriver(row: SupabaseDriverRow): DriverApplication {
     ssn: row.ssn || undefined,
     licenseFrontUrl: row.license_front_url,
     licenseBackUrl: row.license_back_url,
+    hasLimoCertifiedSUV: Boolean(row.has_limo_certified_suv),
+    suvMake: row.suv_make,
+    suvModel: row.suv_model,
+    suvYear: row.suv_year,
+    suvColor: row.suv_color,
     hasChauffeurRegistration: Boolean(row.has_chauffeur_registration),
     chauffeurRegistrationNumber: row.chauffeur_registration_number,
     chauffeurRegistrationExpirationDate: row.chauffeur_registration_expiration_date,
@@ -228,6 +238,15 @@ export async function addDriverApplication(
         ssn: newDriver.ssn || null,
         license_front_url: newDriver.licenseFrontUrl,
         license_back_url: newDriver.licenseBackUrl,
+        has_limo_certified_suv: Boolean(newDriver.hasLimoCertifiedSUV),
+        suv_make: newDriver.suvMake || null,
+        suv_model: newDriver.suvModel || null,
+        suv_year: newDriver.suvYear || null,
+        suv_color: newDriver.suvColor || null,
+        has_chauffeur_registration: Boolean(newDriver.hasChauffeurRegistration),
+        chauffeur_registration_number: newDriver.chauffeurRegistrationNumber || null,
+        chauffeur_registration_expiration_date: newDriver.chauffeurRegistrationExpirationDate || null,
+        chauffeur_registration_front_url: newDriver.chauffeurRegistrationFrontUrl || null,
         status: "pending",
         notes: newDriver.notes || null,
         languages: Array.isArray(newDriver.languages) ? newDriver.languages.join(", ") : (newDriver.languages || null),

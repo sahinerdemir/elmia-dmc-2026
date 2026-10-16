@@ -23,7 +23,14 @@ export interface DriverApplication {
   licenseFrontUrl: string;
   licenseBackUrl: string;
 
-  // Chauffeur Registration — Optional
+  // Limo Certified SUV Ownership
+  hasLimoCertifiedSUV?: boolean;
+  suvMake?: string;
+  suvModel?: string;
+  suvYear?: string;
+  suvColor?: string;
+
+  // For-Hire Chauffeur License (Hack License)
   hasChauffeurRegistration?: boolean;
   chauffeurRegistrationNumber?: string;
   chauffeurRegistrationExpirationDate?: string;

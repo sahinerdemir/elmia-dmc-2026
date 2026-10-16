@@ -428,11 +428,11 @@ export default function DriverDetailPage({ params }: { params: Promise<{ id: str
             </div>
           </div>
 
-          {/* Card 3: License & Chauffeur Registration Data */}
+          {/* Card 3: License & For-Hire Chauffeur License Data */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <h2 className="text-base font-bold text-[#1a3822] mb-4 flex items-center gap-2 pb-3 border-b border-gray-100">
               <ShieldCheck className="w-4 h-4 text-[#285735]" />
-              Ehliyet ve Chauffeur Registration Bilgileri
+              Ehliyet ve For-Hire Chauffeur License (Hack License) Bilgileri
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -458,7 +458,7 @@ export default function DriverDetailPage({ params }: { params: Promise<{ id: str
               </div>
 
               <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 sm:col-span-2">
-                <span className="text-[11px] font-bold uppercase text-gray-400 block mb-1">Chauffeur Registration</span>
+                <span className="text-[11px] font-bold uppercase text-gray-400 block mb-1">For-Hire Chauffeur License (Hack License)</span>
                 {driver.hasChauffeurRegistration ? (
                   <div className="space-y-1">
                     <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
@@ -470,11 +470,64 @@ export default function DriverDetailPage({ params }: { params: Promise<{ id: str
                   </div>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
-                    <XCircle className="w-3.5 h-3.5 text-gray-400" /> Chauffeur Registration Belgesi Yok
+                    <XCircle className="w-3.5 h-3.5 text-gray-400" /> For-Hire Chauffeur License (Hack License) Yok
                   </span>
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Card 3.5: Limo Certified SUV Ownership */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+            <h2 className="text-base font-bold text-[#1a3822] mb-4 flex items-center gap-2 pb-3 border-b border-gray-100">
+              <Car className="w-4 h-4 text-[#285735]" />
+              Limo Sertifikalı SUV Durumu (Limo Certified SUV)
+            </h2>
+
+            {driver.hasLimoCertifiedSUV ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                    <CheckCircle2 className="w-4 h-4" /> Kendisine Ait Limo Sertifikalı SUV Var
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-1">
+                  <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
+                    <span className="text-[11px] font-bold uppercase text-gray-400 block mb-1">Make (Marka)</span>
+                    <span className="text-sm font-bold text-gray-900">
+                      {driver.suvMake || "-"}
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
+                    <span className="text-[11px] font-bold uppercase text-gray-400 block mb-1">Model</span>
+                    <span className="text-sm font-bold text-gray-900">
+                      {driver.suvModel || "-"}
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
+                    <span className="text-[11px] font-bold uppercase text-gray-400 block mb-1">Year (Model Yılı)</span>
+                    <span className="text-sm font-mono font-bold text-gray-900">
+                      {driver.suvYear || "-"}
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
+                    <span className="text-[11px] font-bold uppercase text-gray-400 block mb-1">Colour (Renk)</span>
+                    <span className="text-sm font-bold text-gray-900">
+                      {driver.suvColor || "-"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 flex items-center gap-2 text-sm text-gray-600">
+                <XCircle className="w-4 h-4 text-gray-400 shrink-0" />
+                <span>Kendisine ait Limo sertifikalı SUV bulunmuyor (Şirket araçlarını kullanacak).</span>
+              </div>
+            )}
           </div>
 
           {/* Card 4: Internal Operational Notes */}
@@ -611,13 +664,13 @@ export default function DriverDetailPage({ params }: { params: Promise<{ id: str
             </div>
           </div>
 
-          {/* Chauffeur Registration Document Card (if uploaded) */}
+          {/* For-Hire Chauffeur License (Hack License) Document Card (if uploaded) */}
           {(driver.chauffeurRegistrationFrontUrl || driver.chauffeurRegistrationBackUrl) && (
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-gray-100">
                 <h2 className="text-base font-bold text-[#1a3822] flex items-center gap-2">
                   <FileBadge className="w-4 h-4 text-[#285735]" />
-                  Chauffeur Registration
+                  For-Hire Chauffeur License (Hack License)
                 </h2>
                 {driver.chauffeurRegistrationFrontUrl && (
                   <a
@@ -633,12 +686,12 @@ export default function DriverDetailPage({ params }: { params: Promise<{ id: str
 
               {driver.chauffeurRegistrationFrontUrl && (
                 <div 
-                  onClick={() => setSelectedImage({ url: driver.chauffeurRegistrationFrontUrl!, title: `${driver.firstName} ${driver.lastName} - Chauffeur Registration Belgesi` })}
+                  onClick={() => setSelectedImage({ url: driver.chauffeurRegistrationFrontUrl!, title: `${driver.firstName} ${driver.lastName} - For-Hire Chauffeur License (Hack License) Belgesi` })}
                   className="group relative aspect-[16/10] rounded-xl overflow-hidden bg-gray-100 border border-gray-200 cursor-pointer hover:border-[#285735] transition-all"
                 >
                   <Image
                     src={driver.chauffeurRegistrationFrontUrl}
-                    alt="Chauffeur Reg Document"
+                    alt="For-Hire License Document"
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                     unoptimized

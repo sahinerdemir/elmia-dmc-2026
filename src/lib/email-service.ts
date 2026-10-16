@@ -471,7 +471,13 @@ export async function sendDriverNotificationEmail(
                   <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px; font-family: monospace;">${driver.licenseNumber} (${driver.licenseState || "FL"}) - Exp: ${driver.licenseExpirationDate || "-"}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Chauffeur Reg</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Limo Certified SUV</td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px;">
+                    ${driver.hasLimoCertifiedSUV ? `Yes (${driver.suvYear || ""} ${driver.suvMake || ""} ${driver.suvModel || ""} - ${driver.suvColor || ""})` : "No"}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #94a3b8; font-size: 13px; text-transform: uppercase;">For-Hire License (Hack)</td>
                   <td style="padding: 8px 0; border-bottom: 1px solid #1f2937; color: #ffffff; font-size: 14px;">
                     ${driver.hasChauffeurRegistration ? `Yes (No: ${driver.chauffeurRegistrationNumber || "-"}, Exp: ${driver.chauffeurRegistrationExpirationDate || "-"})` : "No"}
                   </td>
@@ -496,8 +502,8 @@ export async function sendDriverNotificationEmail(
                 <div style="font-size: 13px; color: #e2e8f0; line-height: 1.8;">
                   <p style="margin: 0;">🪪 <strong>Driver's License (Front):</strong> <a href="${driver.licenseFrontUrl}" target="_blank" style="color: #38bdf8; text-decoration: underline;">View Front Photo →</a></p>
                   <p style="margin: 0;">🪪 <strong>Driver's License (Back):</strong> <a href="${driver.licenseBackUrl}" target="_blank" style="color: #38bdf8; text-decoration: underline;">View Back Photo →</a></p>
-                  ${driver.chauffeurRegistrationFrontUrl ? `<p style="margin: 0;">📄 <strong>Chauffeur Reg (Front):</strong> <a href="${driver.chauffeurRegistrationFrontUrl}" target="_blank" style="color: #38bdf8; text-decoration: underline;">View Front Photo →</a></p>` : ""}
-                  ${driver.chauffeurRegistrationBackUrl ? `<p style="margin: 0;">📄 <strong>Chauffeur Reg (Back):</strong> <a href="${driver.chauffeurRegistrationBackUrl}" target="_blank" style="color: #38bdf8; text-decoration: underline;">View Back Photo →</a></p>` : ""}
+                  ${driver.chauffeurRegistrationFrontUrl ? `<p style="margin: 0;">📄 <strong>For-Hire License (Front):</strong> <a href="${driver.chauffeurRegistrationFrontUrl}" target="_blank" style="color: #38bdf8; text-decoration: underline;">View Front Photo →</a></p>` : ""}
+                  ${driver.chauffeurRegistrationBackUrl ? `<p style="margin: 0;">📄 <strong>For-Hire License (Back):</strong> <a href="${driver.chauffeurRegistrationBackUrl}" target="_blank" style="color: #38bdf8; text-decoration: underline;">View Back Photo →</a></p>` : ""}
                 </div>
               </div>
 

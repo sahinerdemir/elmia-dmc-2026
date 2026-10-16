@@ -401,14 +401,23 @@ export default function CRMDriverListPage() {
                             <span className="text-gray-500 font-normal"> • {driver.chauffeurExperienceYears} Yıl Chauffeur</span>
                           )}
                         </div>
-                        <div className="mt-1">
+                        <div className="mt-1 flex flex-wrap items-center gap-1">
                           {driver.hasChauffeurRegistration ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              <ShieldCheck className="w-3 h-3" /> Chauffeur Reg: Var
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" title="For-Hire Chauffeur License (Hack License): Var">
+                              <ShieldCheck className="w-3 h-3" /> Hack Lic: Var
                             </span>
                           ) : (
                             <span className="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500">
-                              Chauffeur Reg: Yok
+                              Hack Lic: Yok
+                            </span>
+                          )}
+                          {driver.hasLimoCertifiedSUV && (
+                            <span 
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200"
+                              title={`Limo Certified SUV: ${driver.suvYear || ""} ${driver.suvMake || ""} ${driver.suvModel || ""} (${driver.suvColor || ""})`}
+                            >
+                              <Car className="w-3 h-3 text-amber-700" />
+                              {driver.suvModel ? `${driver.suvMake ? driver.suvMake + " " : ""}${driver.suvModel}` : "Limo SUV"}
                             </span>
                           )}
                         </div>
@@ -469,28 +478,28 @@ export default function CRMDriverListPage() {
                             </button>
                           )}
 
-                          {/* Chauffeur Reg Photo (if uploaded) */}
+                          {/* For-Hire License Photo (if uploaded) */}
                           {driver.chauffeurRegistrationFrontUrl && (
                             <button
                               type="button"
                               onClick={() =>
                                 setPreviewImage({
                                   url: driver.chauffeurRegistrationFrontUrl!,
-                                  title: `${driver.firstName} ${driver.lastName} — Chauffeur Registration Belgesi`
+                                  title: `${driver.firstName} ${driver.lastName} — For-Hire Chauffeur License (Hack License) Belgesi`
                                 })
                               }
                               className="relative w-12 h-8 rounded-lg border border-emerald-300 overflow-hidden hover:scale-105 transition-transform shadow-2xs group cursor-pointer bg-emerald-50"
-                              title="Chauffeur Registration Belgesi"
+                              title="For-Hire Chauffeur License (Hack License) Belgesi"
                             >
                               <Image
                                 src={driver.chauffeurRegistrationFrontUrl}
-                                alt="Reg Belgesi"
+                                alt="Hack License"
                                 fill
                                 className="object-cover"
                                 unoptimized
                               />
                               <div className="absolute inset-0 bg-black/35 group-hover:bg-transparent transition-colors flex items-center justify-center text-white text-[8px] font-bold">
-                                REG
+                                HACK
                               </div>
                             </button>
                           )}

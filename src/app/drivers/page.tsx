@@ -35,12 +35,19 @@ export default function DriverApplicationPage() {
     licenseState: "FL",
     licenseExpirationDate: "",
 
-    // 4. Chauffeur Registration — Optional
+    // 4. Limo Certified SUV Ownership
+    hasLimoCertifiedSUV: false,
+    suvMake: "",
+    suvModel: "",
+    suvYear: "",
+    suvColor: "",
+
+    // 5. For-Hire Chauffeur License (Hack License)
     hasChauffeurRegistration: false,
     chauffeurRegistrationNumber: "",
     chauffeurRegistrationExpirationDate: "",
 
-    // 5. Availability
+    // 6. Availability
     availability: [] as string[],
     preferredHours: "Flexible",
 
@@ -295,6 +302,12 @@ export default function DriverApplicationPage() {
         licenseFrontUrl,
         licenseBackUrl,
 
+        hasLimoCertifiedSUV: Boolean(formData.hasLimoCertifiedSUV),
+        suvMake: formData.hasLimoCertifiedSUV ? formData.suvMake.trim() : undefined,
+        suvModel: formData.hasLimoCertifiedSUV ? formData.suvModel.trim() : undefined,
+        suvYear: formData.hasLimoCertifiedSUV ? formData.suvYear.trim() : undefined,
+        suvColor: formData.hasLimoCertifiedSUV ? formData.suvColor.trim() : undefined,
+
         hasChauffeurRegistration: Boolean(formData.hasChauffeurRegistration),
         chauffeurRegistrationNumber: formData.hasChauffeurRegistration ? formData.chauffeurRegistrationNumber.trim() : undefined,
         chauffeurRegistrationExpirationDate: formData.hasChauffeurRegistration ? formData.chauffeurRegistrationExpirationDate.trim() : undefined,
@@ -441,6 +454,11 @@ export default function DriverApplicationPage() {
                       licenseNumber: "",
                       licenseState: "FL",
                       licenseExpirationDate: "",
+                      hasLimoCertifiedSUV: false,
+                      suvMake: "",
+                      suvModel: "",
+                      suvYear: "",
+                      suvColor: "",
                       hasChauffeurRegistration: false,
                       chauffeurRegistrationNumber: "",
                       chauffeurRegistrationExpirationDate: "",
@@ -866,18 +884,126 @@ export default function DriverApplicationPage() {
                   </div>
                 </div>
 
-                {/* 4. CHAUFFEUR REGISTRATION — OPTIONAL */}
+                {/* 4. DO YOU HAVE YOUR OWN LIMO CERTIFIED SUV? */}
                 <div>
                   <h2 className="text-base font-bold text-[#1a3822] pb-3 border-b border-[#e7ede7] mb-2">
-                    4. Chauffeur Registration — Optional
+                    4. Do You Have Your Own Limo Certified SUV?
                   </h2>
                   <p className="text-xs text-[#666666] mb-4">
-                    If you currently have a Chauffeur Registration, please provide the information and upload a clear photo of the document showing your registration number.
+                    Please indicate if you currently own or lease a limousine-certified full-size executive SUV (e.g., Cadillac Escalade ESV, Lincoln Navigator L, Chevrolet Suburban).
                   </p>
 
                   <div className="mb-5">
                     <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
-                      Do you currently have a Chauffeur Registration?
+                      Do You Have Your Own Limo Certified SUV?
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, hasLimoCertifiedSUV: true })}
+                        className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          formData.hasLimoCertifiedSUV
+                            ? "bg-[#285735] text-white shadow-sm"
+                            : "bg-[#f8faf8] text-[#555555] border border-gray-200 hover:bg-gray-100"
+                        }`}
+                      >
+                        Yes
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData({ 
+                            ...formData, 
+                            hasLimoCertifiedSUV: false,
+                            suvMake: "",
+                            suvModel: "",
+                            suvYear: "",
+                            suvColor: ""
+                          });
+                        }}
+                        className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          !formData.hasLimoCertifiedSUV
+                            ? "bg-[#285735] text-white shadow-sm"
+                            : "bg-[#f8faf8] text-[#555555] border border-gray-200 hover:bg-gray-100"
+                        }`}
+                      >
+                        No
+                      </button>
+                    </div>
+                  </div>
+
+                  {formData.hasLimoCertifiedSUV && (
+                    <div className="space-y-4 p-5 bg-[#f8faf8] rounded-xl border border-gray-200 animate-in fade-in duration-200">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                            Make
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.suvMake}
+                            onChange={(e) => setFormData({ ...formData, suvMake: e.target.value })}
+                            placeholder="e.g. Cadillac, Lincoln, GMC"
+                            className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] text-sm transition-all"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                            Model
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.suvModel}
+                            onChange={(e) => setFormData({ ...formData, suvModel: e.target.value })}
+                            placeholder="e.g. Escalade ESV, Navigator L"
+                            className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] text-sm transition-all"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                            Year
+                          </label>
+                          <input
+                            type="text"
+                            maxLength={4}
+                            value={formData.suvYear}
+                            onChange={(e) => setFormData({ ...formData, suvYear: e.target.value.replace(/[^0-9]/g, "") })}
+                            placeholder="e.g. 2024"
+                            className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] text-sm font-mono transition-all"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                            Colour
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.suvColor}
+                            onChange={(e) => setFormData({ ...formData, suvColor: e.target.value })}
+                            placeholder="e.g. Black"
+                            className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] text-sm transition-all"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 5. FOR-HIRE CHAUFFEUR LICENSE (HACK LICENSE) */}
+                <div>
+                  <h2 className="text-base font-bold text-[#1a3822] pb-3 border-b border-[#e7ede7] mb-2">
+                    5. For-Hire Chauffeur License (Hack License)
+                  </h2>
+                  <p className="text-xs text-[#666666] mb-4">
+                    If you currently have a For-Hire Chauffeur License (Hack License), please provide the information and upload a clear photo of the document showing your license number.
+                  </p>
+
+                  <div className="mb-5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
+                      Do you currently have a For-Hire Chauffeur License (Hack License)?
                     </label>
                     <div className="flex items-center gap-3">
                       <button
@@ -919,13 +1045,13 @@ export default function DriverApplicationPage() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div>
                           <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
-                            Chauffeur Registration Number
+                            For-Hire Chauffeur License Number
                           </label>
                           <input
                             type="text"
                             value={formData.chauffeurRegistrationNumber}
                             onChange={(e) => setFormData({ ...formData, chauffeurRegistrationNumber: e.target.value })}
-                            placeholder="e.g. CR-987654"
+                            placeholder="e.g. CR-987654 / Hack #12345"
                             className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-[#222222] placeholder-gray-400 focus:outline-none focus:border-[#285735] text-sm font-mono transition-all"
                           />
                         </div>
@@ -943,10 +1069,10 @@ export default function DriverApplicationPage() {
                         </div>
                       </div>
 
-                      {/* Single Chauffeur Registration Photo Upload */}
+                      {/* Single For-Hire Chauffeur License Photo Upload */}
                       <div className="pt-2">
                         <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
-                          Chauffeur Registration Photo (Showing Registration Number)
+                          For-Hire Chauffeur License Photo (Showing License Number)
                         </label>
                         <input
                           ref={chauffeurInputRef}
@@ -973,7 +1099,7 @@ export default function DriverApplicationPage() {
                               {chauffeurPreview ? (
                                 <Image
                                   src={chauffeurPreview}
-                                  alt="Registration Document"
+                                  alt="License Document"
                                   fill
                                   className="object-cover"
                                   unoptimized
@@ -1010,7 +1136,7 @@ export default function DriverApplicationPage() {
                           >
                             <Camera className="w-5 h-5 text-gray-400" />
                             <span className="text-xs font-semibold text-[#444444]">
-                              Upload Registration Document Photo
+                              Upload For-Hire Chauffeur License Photo
                             </span>
                             <span className="text-[11px] text-gray-400">
                               JPG, PNG, or PDF
@@ -1022,10 +1148,10 @@ export default function DriverApplicationPage() {
                   )}
                 </div>
 
-                {/* 5. AVAILABILITY */}
+                {/* 6. AVAILABILITY */}
                 <div>
                   <h2 className="text-base font-bold text-[#1a3822] pb-3 border-b border-[#e7ede7] mb-5">
-                    5. Availability
+                    6. Availability
                   </h2>
                   <div className="space-y-5">
                     <div>
@@ -1080,10 +1206,10 @@ export default function DriverApplicationPage() {
                   </div>
                 </div>
 
-                {/* 6. LANGUAGES */}
+                {/* 7. LANGUAGES */}
                 <div>
                   <h2 className="text-base font-bold text-[#1a3822] pb-3 border-b border-[#e7ede7] mb-5">
-                    6. Languages
+                    7. Languages
                   </h2>
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
@@ -1119,10 +1245,10 @@ export default function DriverApplicationPage() {
                   </div>
                 </div>
 
-                {/* 7. ADDITIONAL INFORMATION — OPTIONAL */}
+                {/* 8. ADDITIONAL INFORMATION — OPTIONAL */}
                 <div>
                   <h2 className="text-base font-bold text-[#1a3822] pb-3 border-b border-[#e7ede7] mb-5">
-                    7. Additional Information — Optional
+                    8. Additional Information — Optional
                   </h2>
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-[#444444] mb-2">
@@ -1138,7 +1264,7 @@ export default function DriverApplicationPage() {
                   </div>
                 </div>
 
-                {/* 8. APPLICANT CERTIFICATION / SUBMIT */}
+                {/* 9. APPLICANT CERTIFICATION / SUBMIT */}
                 <div className="pt-6 border-t border-[#e7ede7] space-y-6">
                   <div className="p-4 rounded-xl bg-[#f8faf8] border border-gray-200 flex items-start space-x-3">
                     <input

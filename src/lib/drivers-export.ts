@@ -22,11 +22,16 @@ export function generateDriversCSV(drivers: DriverApplication[]): string {
     "License Expiration",
     "License Front URL",
     "License Back URL",
-    "Has Chauffeur Reg",
-    "Chauffeur Reg Number",
-    "Chauffeur Reg Expiration",
-    "Chauffeur Front URL",
-    "Chauffeur Back URL",
+    "Has Limo Certified SUV",
+    "SUV Make",
+    "SUV Model",
+    "SUV Year",
+    "SUV Colour",
+    "Has For-Hire License (Hack)",
+    "For-Hire License Number",
+    "For-Hire License Expiration",
+    "For-Hire License Front URL",
+    "For-Hire License Back URL",
     "Availability",
     "Preferred Hours",
     "Languages",
@@ -78,6 +83,11 @@ export function generateDriversCSV(drivers: DriverApplication[]): string {
       escapeCSV(d.licenseExpirationDate || "-"),
       escapeCSV(d.licenseFrontUrl),
       escapeCSV(d.licenseBackUrl),
+      escapeCSV(d.hasLimoCertifiedSUV ? "Yes" : "No"),
+      escapeCSV(d.suvMake || "-"),
+      escapeCSV(d.suvModel || "-"),
+      escapeCSV(d.suvYear || "-"),
+      escapeCSV(d.suvColor || "-"),
       escapeCSV(d.hasChauffeurRegistration ? "Yes" : "No"),
       escapeCSV(d.chauffeurRegistrationNumber || "-"),
       escapeCSV(d.chauffeurRegistrationExpirationDate || "-"),
@@ -149,6 +159,11 @@ export function generateDriversExcelXML(drivers: DriverApplication[]): string {
         <Cell><Data ss:Type="String">${sanitize(d.licenseExpirationDate || "-")}</Data></Cell>
         <Cell><Data ss:Type="String">${sanitize(d.licenseFrontUrl)}</Data></Cell>
         <Cell><Data ss:Type="String">${sanitize(d.licenseBackUrl)}</Data></Cell>
+        <Cell><Data ss:Type="String">${sanitize(d.hasLimoCertifiedSUV ? "Yes" : "No")}</Data></Cell>
+        <Cell><Data ss:Type="String">${sanitize(d.suvMake || "-")}</Data></Cell>
+        <Cell><Data ss:Type="String">${sanitize(d.suvModel || "-")}</Data></Cell>
+        <Cell><Data ss:Type="String">${sanitize(d.suvYear || "-")}</Data></Cell>
+        <Cell><Data ss:Type="String">${sanitize(d.suvColor || "-")}</Data></Cell>
         <Cell><Data ss:Type="String">${sanitize(d.hasChauffeurRegistration ? "Yes" : "No")}</Data></Cell>
         <Cell><Data ss:Type="String">${sanitize(d.chauffeurRegistrationNumber || "-")}</Data></Cell>
         <Cell><Data ss:Type="String">${sanitize(d.chauffeurRegistrationExpirationDate || "-")}</Data></Cell>
@@ -199,7 +214,12 @@ export function generateDriversExcelXML(drivers: DriverApplication[]): string {
       <Column ss:Width="100"/>
       <Column ss:Width="200"/>
       <Column ss:Width="200"/>
+      <Column ss:Width="110"/>
+      <Column ss:Width="110"/>
+      <Column ss:Width="110"/>
       <Column ss:Width="90"/>
+      <Column ss:Width="90"/>
+      <Column ss:Width="110"/>
       <Column ss:Width="130"/>
       <Column ss:Width="100"/>
       <Column ss:Width="200"/>
@@ -227,11 +247,16 @@ export function generateDriversExcelXML(drivers: DriverApplication[]): string {
         <Cell><Data ss:Type="String">License Expiry</Data></Cell>
         <Cell><Data ss:Type="String">License Front URL</Data></Cell>
         <Cell><Data ss:Type="String">License Back URL</Data></Cell>
-        <Cell><Data ss:Type="String">Chauffeur Reg</Data></Cell>
-        <Cell><Data ss:Type="String">Chauffeur Reg No</Data></Cell>
-        <Cell><Data ss:Type="String">Chauffeur Expiry</Data></Cell>
-        <Cell><Data ss:Type="String">Chauffeur Front URL</Data></Cell>
-        <Cell><Data ss:Type="String">Chauffeur Back URL</Data></Cell>
+        <Cell><Data ss:Type="String">Limo Certified SUV</Data></Cell>
+        <Cell><Data ss:Type="String">SUV Make</Data></Cell>
+        <Cell><Data ss:Type="String">SUV Model</Data></Cell>
+        <Cell><Data ss:Type="String">SUV Year</Data></Cell>
+        <Cell><Data ss:Type="String">SUV Colour</Data></Cell>
+        <Cell><Data ss:Type="String">For-Hire Lic (Hack)</Data></Cell>
+        <Cell><Data ss:Type="String">For-Hire Lic No</Data></Cell>
+        <Cell><Data ss:Type="String">For-Hire Expiry</Data></Cell>
+        <Cell><Data ss:Type="String">For-Hire Front URL</Data></Cell>
+        <Cell><Data ss:Type="String">For-Hire Back URL</Data></Cell>
         <Cell><Data ss:Type="String">Availability</Data></Cell>
         <Cell><Data ss:Type="String">Preferred Hours</Data></Cell>
         <Cell><Data ss:Type="String">Languages</Data></Cell>
