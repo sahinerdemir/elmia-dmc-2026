@@ -1,0 +1,56 @@
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    # Run once every 24 hours at 06:00 UTC (01:00 EST / 02:00 EDT)
+    - cron: '0 6 * * *'
+  # Allow manual trigger anytime from GitHub Actions UI or GitHub CLI
+  workflow_dispatch:
+
+concurrency:
+  group: supabase-keep-alive
+  cancel-in-progress: false
+
+jobs:
+  keep-alive:
+    name: Database Keep-Alive Ping
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Ping Supabase Database via REST API
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_ANON_KEY:-}" ]; then
+            echo "::error::Required secrets (SUPABASE_URL or SUPABASE_ANON_KEY) are missing!"
+            exit 1
+          fi
+
+          ENDPOINT="${SUPABASE_URL%/}/rest/v1/leads?select=id&limit=1"
+          echo "Sending keep-alive query to Supabase PostgreSQL: ${ENDPOINT}"
+
+          HTTP_STATUS=$(curl -s -o /tmp/supabase_response.json -w "%{http_code}" \
+            --retry 3 \
+            --retry-delay 3 \
+            --retry-connrefused \
+            --max-time 20 \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "Accept: application/json" \
+            "${ENDPOINT}")
+
+          BODY=$(cat /tmp/supabase_response.json)
+
+          echo "HTTP Status Code: ${HTTP_STATUS}"
+          echo "Response Preview: ${BODY}"
+
+          if [ "${HTTP_STATUS}" -ne 200 ]; then
+            echo "::error::Keep-alive ping failed with HTTP ${HTTP_STATUS}. Response: ${BODY}"
+            exit 1
+          fi
+
+          echo "✅ Supabase database keep-alive query succeeded at $(date -u '+%Y-%m-%d %H:%M:%S UTC')."
