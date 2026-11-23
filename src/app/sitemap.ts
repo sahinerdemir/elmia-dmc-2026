@@ -3,6 +3,7 @@ import { DMC_SERVICES } from "@/data/services";
 import { VIP_PROGRAMS } from "@/data/vipPrograms";
 import { EXPERIENCES } from "@/data/experiences";
 import { MAJOR_EVENTS } from "@/data/events";
+import { ART_BASEL_UPDATES } from "@/data/artBaselUpdates";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://www.elmiadmc.com";
@@ -110,11 +111,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.88,
   }));
 
+  // Art Basel Miami Beach 2026 Daily Bulletin Updates (13-Part Series)
+  const artBaselUpdateRoutes: MetadataRoute.Sitemap = ART_BASEL_UPDATES.map((up) => ({
+    url: `${baseUrl}/events/art-basel-miami-beach/updates/${up.slug}`,
+    lastModified: now,
+    changeFrequency: "daily",
+    priority: 0.86,
+  }));
+
   return [
     ...staticRoutes,
     ...serviceRoutes,
     ...vipRoutes,
     ...experienceRoutes,
     ...eventRoutes,
+    ...artBaselUpdateRoutes,
   ];
 }

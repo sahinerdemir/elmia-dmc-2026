@@ -20,6 +20,7 @@ import {
   Clock
 } from "lucide-react";
 import { MAJOR_EVENTS, getEventBySlug } from "@/data/events";
+import { ART_BASEL_UPDATES } from "@/data/artBaselUpdates";
 import CTABanner from "@/components/CTABanner";
 
 interface EventPageProps {
@@ -346,6 +347,101 @@ export default async function EventDetailPage({ params }: EventPageProps) {
 
         </div>
       </section>
+
+      {/* 2.5 ART BASEL SPECIAL FEATURE: DAILY COUNTDOWN & DISPATCHES */}
+      {event.slug === "art-basel-miami-beach" && (
+        <section id="daily-bulletin" className="py-16 sm:py-24 bg-[#0c1810] text-white border-t border-[#1b3d24]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+              <div className="max-w-3xl">
+                <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#1b3d24] border border-[#2e623b] text-xs font-bold uppercase tracking-wider text-[#61CE70] mb-4">
+                  <Sparkles className="w-3.5 h-3.5 text-[#61CE70]" />
+                  <span>Exclusive Fair Intelligence</span>
+                </div>
+                <h2 className="text-2xl sm:text-4xl font-normal text-white font-heading tracking-tight leading-tight mb-3">
+                  Art Basel Miami Beach 2026: <br />
+                  <span className="text-[#61CE70]">Daily Countdown &amp; Fair Dispatches</span>
+                </h2>
+                <p className="text-sm sm:text-base text-gray-300 font-light leading-relaxed">
+                  A comprehensive 13-day insider editorial series guiding collectors, VIP patrons, and attending delegations through the gallery sectors, VIP Vernissages, private aviation, and South Beach nightlife.
+                </p>
+              </div>
+
+              <div className="flex items-center space-x-3 shrink-0">
+                <span className="text-xs text-gray-400">Series Archive:</span>
+                <span className="px-3 py-1 rounded-full bg-white/10 text-[#82d68e] text-xs font-bold border border-white/15">
+                  13 Daily Bulletins
+                </span>
+              </div>
+            </div>
+
+            {/* Grid of 13 Updates */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+              {ART_BASEL_UPDATES.map((update, idx) => (
+                <article
+                  key={update.id}
+                  className="group flex flex-col justify-between rounded-2xl bg-[#14261a] border border-[#23452c] hover:border-[#61CE70] transition-all duration-300 overflow-hidden hover:shadow-xl hover:-translate-y-1"
+                >
+                  <div className="relative h-48 w-full overflow-hidden bg-black/40">
+                    <Image
+                      src={update.coverImage}
+                      alt={update.title}
+                      fill
+                      className="object-cover object-center group-hover:scale-105 transition-transform duration-700 opacity-80 group-hover:opacity-100"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#14261a] via-[#14261a]/40 to-transparent" />
+                    
+                    {/* Countdown Badge */}
+                    <div className="absolute top-3.5 left-3.5">
+                      <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-[#285735]/95 backdrop-blur-md text-[#82d68e] border border-[#3e7e50] shadow-sm">
+                        {update.countdownLabel}
+                      </span>
+                    </div>
+
+                    <div className="absolute top-3.5 right-3.5">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-black/60 backdrop-blur-md text-gray-300 border border-white/10">
+                        {update.readTime}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
+                        <span className="text-[#82d68e] font-medium">{update.category}</span>
+                        <span>{update.publishDate}</span>
+                      </div>
+
+                      <h3 className="text-base sm:text-lg font-bold text-white group-hover:text-[#61CE70] transition-colors leading-snug">
+                        <Link href={`/events/art-basel-miami-beach/updates/${update.slug}`}>
+                          {update.title}
+                        </Link>
+                      </h3>
+
+                      <p className="text-xs text-gray-300 mt-2 line-clamp-3 leading-relaxed">
+                        {update.excerpt}
+                      </p>
+                    </div>
+
+                    <div className="pt-4 border-t border-[#23452c] flex items-center justify-between">
+                      <Link
+                        href={`/events/art-basel-miami-beach/updates/${update.slug}`}
+                        className="inline-flex items-center text-xs font-bold text-[#82d68e] group-hover:text-white transition-colors"
+                      >
+                        <span>Read Full Dispatch</span>
+                        <ArrowRight className="ml-1.5 w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                      </Link>
+                      <span className="text-[11px] text-gray-500 font-mono">
+                        #{idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
+                      </span>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 3. DISCREET TURNKEY FACILITATION BY ELMIA */}
       <section className="py-16 sm:py-20 bg-gray-50 border-t border-gray-200">

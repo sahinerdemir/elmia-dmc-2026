@@ -2,9 +2,10 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Metadata } from "next";
-import { Calendar, MapPin, Sparkles, Shield, Compass, ArrowRight } from "lucide-react";
+import { Calendar, MapPin, Sparkles, Shield, Compass, ArrowRight, Tag } from "lucide-react";
 import EventsClient from "./EventsClient";
 import CTABanner from "@/components/CTABanner";
+import { ART_BASEL_UPDATES } from "@/data/artBaselUpdates";
 
 export const metadata: Metadata = {
   title: "America's Major Events & Summits | Trade Missions, Expos & VIP Calendar",
@@ -62,6 +63,43 @@ export default function EventsPage() {
       {/* 2. MAIN DIRECTORY BODY WITH INTERACTIVE CITY TABS */}
       <section className="relative pb-14 sm:pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full z-20">
         <EventsClient />
+      </section>
+
+      {/* 2.5 ART BASEL SPECIAL EDITORIAL SPOTLIGHT */}
+      <section className="py-12 bg-[#0c1810] text-white border-y border-[#1b3d24]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-8 p-6 sm:p-10 rounded-3xl bg-[#14261a] border border-[#23452c]">
+            <div className="max-w-2xl space-y-3">
+              <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#1b3d24] border border-[#2e623b] text-[11px] font-bold uppercase tracking-wider text-[#61CE70]">
+                <Sparkles className="w-3.5 h-3.5 text-[#61CE70]" />
+                <span>Live Event Bulletin</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-normal text-white font-heading tracking-tight leading-snug">
+                Art Basel Miami Beach 2026: <br className="hidden sm:inline" />
+                <span className="text-[#61CE70]">13-Part Daily Countdown &amp; Fair Intelligence</span>
+              </h2>
+              <p className="text-xs sm:text-sm text-gray-300 leading-relaxed font-light">
+                Follow our daily dispatches covering First Choice VIP vernissages, Meridians monumental art, causeway navigation, private aviation at Opa-locka, and satellite fairs across South Beach.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto shrink-0">
+              <Link
+                href="/events/art-basel-miami-beach#daily-bulletin"
+                className="inline-flex items-center justify-center px-6 py-3.5 rounded-full bg-[#61CE70] hover:bg-[#4dbd5c] text-[#0c1810] text-xs font-bold uppercase tracking-wider transition-all shadow-md text-center"
+              >
+                <span>Explore Daily Bulletins</span>
+                <ArrowRight className="ml-2 w-4 h-4" />
+              </Link>
+              <Link
+                href="/events/art-basel-miami-beach"
+                className="inline-flex items-center justify-center px-6 py-3.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-semibold border border-white/20 transition-all text-center"
+              >
+                <span>Full Event Guide</span>
+              </Link>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* 3. DISCREET TURNKEY FACILITATION BRIEF */}
