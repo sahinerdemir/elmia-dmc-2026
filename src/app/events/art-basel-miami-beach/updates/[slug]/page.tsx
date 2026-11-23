@@ -289,15 +289,23 @@ export default async function ArtBaselUpdatePage({ params }: PageProps) {
               {/* Key Takeaway Card */}
               <div className="p-6 rounded-2xl bg-[#0c1810] text-white border border-[#1b3d24]">
                 <span className="text-[11px] font-bold uppercase tracking-widest text-[#61CE70] block mb-1">
-                  Executive Brief &amp; Takeaway
+                  Visitor Takeaway &amp; Summary
                 </span>
                 <h3 className="text-lg font-semibold text-white mb-2 font-heading">
-                  The Bottom Line for Patrons
+                  Key Advice for Fair Attendees
                 </h3>
                 <p className="text-sm text-gray-300 leading-relaxed">
                   {update.keyTakeaway}
                 </p>
               </div>
+
+              {/* Service Note */}
+              {update.serviceNote && (
+                <div className="p-5 rounded-xl bg-[#f8faf8] border border-[#d6e5d6] text-xs sm:text-sm text-gray-700 leading-relaxed">
+                  <span className="font-bold text-[#285735] block mb-1">Executive Concierge &amp; Delegation Logistics:</span>
+                  {update.serviceNote}
+                </div>
+              )}
 
               {/* Next / Prev Navigation */}
               <div className="pt-6 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -308,7 +316,7 @@ export default async function ArtBaselUpdatePage({ params }: PageProps) {
                   >
                     <span className="text-[11px] text-gray-500 uppercase tracking-wider block mb-1 flex items-center">
                       <ArrowLeft className="w-3 h-3 mr-1 group-hover:-translate-x-0.5 transition-transform" />
-                      Previous Dispatch ({prevUpdate.countdownLabel})
+                      Previous Bulletin ({prevUpdate.countdownLabel})
                     </span>
                     <span className="text-xs sm:text-sm font-bold text-gray-900 group-hover:text-[#285735] transition-colors line-clamp-1">
                       {prevUpdate.title}
@@ -322,7 +330,7 @@ export default async function ArtBaselUpdatePage({ params }: PageProps) {
                     className="p-4 rounded-xl border border-gray-200 bg-white hover:border-[#285735] hover:shadow-sm transition-all text-right group"
                   >
                     <span className="text-[11px] text-gray-500 uppercase tracking-wider block mb-1 flex items-center justify-end">
-                      Next Dispatch ({nextUpdate.countdownLabel})
+                      Next Bulletin ({nextUpdate.countdownLabel})
                       <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-0.5 transition-transform" />
                     </span>
                     <span className="text-xs sm:text-sm font-bold text-gray-900 group-hover:text-[#285735] transition-colors line-clamp-1">
@@ -336,72 +344,73 @@ export default async function ArtBaselUpdatePage({ params }: PageProps) {
             {/* RIGHT 4 COLUMNS: STICKY SIDEBAR */}
             <div className="lg:col-span-4 space-y-6">
               
-              {/* Contextual VIP Service Card */}
-              <div className="sticky top-28 rounded-2xl border border-[#b8dfbf] bg-white p-6 sm:p-7 space-y-5 shadow-md">
+              {/* Event Quick Coordinates Card */}
+              <div className="sticky top-28 rounded-2xl border border-[#b8dfbf] bg-white p-6 sm:p-7 space-y-5 shadow-sm">
                 <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#f2f7f2] border border-[#d3e5d3] text-xs font-bold uppercase tracking-wider text-[#285735]">
-                  <Shield className="w-3.5 h-3.5 text-[#285735]" />
-                  <span>ELMIA VIP Operations</span>
+                  <Compass className="w-3.5 h-3.5 text-[#285735]" />
+                  <span>Fair Coordinates</span>
                 </div>
 
                 <div>
                   <h3 className="text-lg font-bold text-[#1a3822] leading-snug">
-                    {update.serviceCTA.title}
+                    Art Basel Miami Beach 2026
                   </h3>
-                  <p className="text-xs text-gray-600 mt-2 leading-relaxed">
-                    {update.serviceCTA.description}
+                  <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                    Miami Beach Convention Center (MBCC)
                   </p>
                 </div>
 
                 <div className="pt-3 border-t border-gray-100 space-y-2.5 text-xs">
                   <div className="flex justify-between py-1 border-b border-gray-100">
-                    <span className="text-gray-500">Event:</span>
-                    <span className="font-bold text-gray-900">Art Basel Miami Beach 2026</span>
+                    <span className="text-gray-500">Public Dates:</span>
+                    <span className="font-bold text-[#285735]">Dec 4 – Dec 6, 2026</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-gray-100">
-                    <span className="text-gray-500">Dates:</span>
-                    <span className="font-bold text-[#285735]">Dec 2 – Dec 6, 2026</span>
+                    <span className="text-gray-500">VIP Previews:</span>
+                    <span className="font-bold text-gray-900">Dec 2 – Dec 3, 2026</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-gray-100">
-                    <span className="text-gray-500">Venue:</span>
-                    <span className="font-bold text-gray-900 truncate ml-2">Miami Beach Conv. Center</span>
+                    <span className="text-gray-500">Venue Address:</span>
+                    <span className="font-bold text-gray-900 truncate ml-2">1901 Convention Ctr Dr</span>
                   </div>
                   <div className="flex justify-between py-1">
-                    <span className="text-gray-500">Fleet Availability:</span>
-                    <span className="font-bold text-emerald-700">Escalade / Sprinter / Maybach</span>
+                    <span className="text-gray-500">Admission:</span>
+                    <span className="font-bold text-gray-900">Digital Mobile Pass Only</span>
                   </div>
                 </div>
 
                 <div className="space-y-2.5 pt-2">
                   <a
-                    href="#dispatch-inquiry"
-                    className="w-full py-3.5 px-5 rounded-full bg-[#285735] hover:bg-[#1e4329] text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center transition-all shadow-md cursor-pointer"
+                    href="https://artbasel.com/miami-beach"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-3 px-5 rounded-full bg-[#0c1810] hover:bg-[#1a3822] text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center transition-all shadow-sm"
                   >
-                    <span>{update.serviceCTA.buttonText}</span>
-                    <ArrowRight className="ml-1.5 w-4 h-4" />
+                    <span>Official Art Basel Website</span>
+                    <ArrowRight className="ml-1.5 w-3.5 h-3.5" />
                   </a>
 
                   <a
-                    href="tel:+17866777333"
+                    href="#dispatch-inquiry"
                     className="w-full py-2.5 px-5 rounded-full bg-white hover:bg-[#f4f7f4] border border-[#b8dfbf] text-[#285735] text-xs font-bold flex items-center justify-center transition-colors shadow-sm"
                   >
-                    <Phone className="w-3.5 h-3.5 mr-2 text-[#285735]" />
-                    <span>Call +1 (786) 677-7333</span>
+                    <span>Request Delegation Logistics</span>
                   </a>
                 </div>
 
-                {/* Series Navigation List */}
+                {/* Published Bulletins List */}
                 <div className="pt-4 border-t border-gray-100">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 block mb-3">
-                    All Dispatches in this Series ({allUpdates.length})
+                    Daily Bulletins ({allUpdates.length})
                   </span>
-                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1 text-xs">
+                  <div className="space-y-2 text-xs">
                     {allUpdates.map((u) => {
                       const isActive = u.slug === update.slug;
                       return (
                         <Link
                           key={u.id}
                           href={`/events/art-basel-miami-beach/updates/${u.slug}`}
-                          className={`block p-2 rounded-lg transition-colors ${
+                          className={`block p-2.5 rounded-lg transition-colors ${
                             isActive
                               ? "bg-[#285735] text-white font-medium"
                               : "text-gray-700 hover:bg-gray-100"
@@ -409,9 +418,9 @@ export default async function ArtBaselUpdatePage({ params }: PageProps) {
                         >
                           <div className="flex items-center justify-between text-[10px] opacity-80 mb-0.5">
                             <span>{u.countdownLabel}</span>
-                            <span>{u.publishDate.split(",")[0]}</span>
+                            <span>{u.publishDate}</span>
                           </div>
-                          <span className="line-clamp-1">{u.title}</span>
+                          <span className="line-clamp-2">{u.title}</span>
                         </Link>
                       );
                     })}
@@ -427,8 +436,8 @@ export default async function ArtBaselUpdatePage({ params }: PageProps) {
       <section id="dispatch-inquiry" className="py-16 sm:py-20 bg-white border-t border-gray-200">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <ContactForm
-            initialService={`Art Basel 2026: ${update.serviceCTA.serviceName}`}
-            title={`Art Basel Miami Beach: Request ${update.serviceCTA.serviceName}`}
+            initialService="Art Basel Miami Beach 2026 Logistics"
+            title="Art Basel Miami Beach: Executive Ground Logistics"
             subtitle="Coordinate your executive vehicle fleet, airport tarmac transfers, or private hospitality suite with ELMIA's dedicated destination architects."
           />
         </div>

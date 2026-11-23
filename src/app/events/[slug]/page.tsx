@@ -356,26 +356,26 @@ export default async function EventDetailPage({ params }: EventPageProps) {
               <div className="max-w-3xl">
                 <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#1b3d24] border border-[#2e623b] text-xs font-bold uppercase tracking-wider text-[#61CE70] mb-4">
                   <Sparkles className="w-3.5 h-3.5 text-[#61CE70]" />
-                  <span>Exclusive Fair Intelligence</span>
+                  <span>Live Fair Bulletin &amp; Daily News</span>
                 </div>
                 <h2 className="text-2xl sm:text-4xl font-normal text-white font-heading tracking-tight leading-tight mb-3">
                   Art Basel Miami Beach 2026: <br />
-                  <span className="text-[#61CE70]">Daily Countdown &amp; Fair Dispatches</span>
+                  <span className="text-[#61CE70]">Daily Event News &amp; Visitor Briefs</span>
                 </h2>
                 <p className="text-sm sm:text-base text-gray-300 font-light leading-relaxed">
-                  A comprehensive 13-day insider editorial series guiding collectors, VIP patrons, and attending delegations through the gallery sectors, VIP Vernissages, private aviation, and South Beach nightlife.
+                  Real-time daily reporting covering tickets, visiting artist rosters, sector walk-throughs, MBCC transit guidelines, and satellite fairs across South Beach as opening day approaches.
                 </p>
               </div>
 
               <div className="flex items-center space-x-3 shrink-0">
-                <span className="text-xs text-gray-400">Series Archive:</span>
+                <span className="text-xs text-gray-400">Live Bulletins:</span>
                 <span className="px-3 py-1 rounded-full bg-white/10 text-[#82d68e] text-xs font-bold border border-white/15">
-                  13 Daily Bulletins
+                  {ART_BASEL_UPDATES.length} Published
                 </span>
               </div>
             </div>
 
-            {/* Grid of 13 Updates */}
+            {/* Grid of Updates */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {ART_BASEL_UPDATES.map((update, idx) => (
                 <article

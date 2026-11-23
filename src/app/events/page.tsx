@@ -76,10 +76,10 @@ export default function EventsPage() {
               </div>
               <h2 className="text-2xl sm:text-3xl font-normal text-white font-heading tracking-tight leading-snug">
                 Art Basel Miami Beach 2026: <br className="hidden sm:inline" />
-                <span className="text-[#61CE70]">13-Part Daily Countdown &amp; Fair Intelligence</span>
+                <span className="text-[#61CE70]">Live Daily News &amp; Visitor Updates</span>
               </h2>
               <p className="text-xs sm:text-sm text-gray-300 leading-relaxed font-light">
-                Follow our daily dispatches covering First Choice VIP vernissages, Meridians monumental art, causeway navigation, private aviation at Opa-locka, and satellite fairs across South Beach.
+                Follow our daily reporting on tickets, artist rosters, sector walk-throughs, MBCC transit routes, and satellite fairs across South Beach as opening day approaches.
               </p>
             </div>
 
@@ -88,7 +88,7 @@ export default function EventsPage() {
                 href="/events/art-basel-miami-beach#daily-bulletin"
                 className="inline-flex items-center justify-center px-6 py-3.5 rounded-full bg-[#61CE70] hover:bg-[#4dbd5c] text-[#0c1810] text-xs font-bold uppercase tracking-wider transition-all shadow-md text-center"
               >
-                <span>Explore Daily Bulletins</span>
+                <span>View Today&apos;s Bulletin</span>
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Link>
               <Link
