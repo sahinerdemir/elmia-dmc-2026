@@ -83,6 +83,58 @@ export const ART_BASEL_UPDATES: ArtBaselUpdate[] = [
     ],
     keyTakeaway: "Book your electronic mobile tickets well in advance, target morning entry hours (11:00 AM) to avoid entry lines, and utilize the free city shuttles or pre-arranged drop-offs to bypass parking garage queues.",
     serviceNote: "Attending with an executive group, private collection advisory, or corporate delegation? ELMIA DMC coordinates dedicated executive chauffeur standby, private airport tarmac pickups at Opa-locka (OPF), and turnkey logistics for Miami Art Week."
+  },
+  {
+    id: "ab-02",
+    slug: "monumental-art-meridians-galleries-lineup-2026",
+    title: "Meridians & Main Sectors: The Standout Art, Monumental Sculptures & Galleries at Art Basel 2026",
+    subtitle: "From museum-scale installations in the Grand Ballroom to groundbreaking presentations in Nova and Positions, here is what to look out for on the exhibition floor.",
+    publishDate: "November 25, 2026",
+    publishDateISO: "2026-11-25",
+    countdownDays: 7,
+    countdownLabel: "7 Days to VIP Opening",
+    category: "Artists & Works",
+    author: "ELMIA Event Intelligence Desk",
+    readTime: "5 min read",
+    coverImage: "/images/slide-luxury.jpg",
+    excerpt: "Explore the curatorial architecture of Art Basel Miami Beach 2026: how the Meridians sector transforms the Grand Ballroom with colossal installations, and which artists are creating buzz across Galleries, Nova, and Positions.",
+    highlights: [
+      "Over 20 museum-scale monumental sculptures and performance projects debuting inside the Meridians sector",
+      "280+ premier international galleries representing established masters and emerging innovators from 38 nations",
+      "Nova & Positions sectors spotlighting bold solo booths and works created within the last three years",
+      "Key artistic trends: monumental textiles, kinetic metalwork, eco-material sculpture, and historical retrospectives"
+    ],
+    content: [
+      {
+        sectionTitle: "Meridians in the Grand Ballroom: Art That Defies the Booth",
+        paragraphs: [
+          "Occupying the vast, column-free Grand Ballroom on the second level of the Miami Beach Convention Center, Meridians remains the fair’s most ambitious platform. Unlike standard gallery booths bound by standard partition walls, Meridians invites artists to push spatial boundaries at an architectural scale.",
+          "This year’s sector gathers over twenty colossal presentations, including multi-story suspended fiber sculptures, massive interactive sound environments, and live performance works that unfold across the room at scheduled intervals throughout the day. Institutional curators and private foundation directors often begin their mornings here to evaluate pieces intended for public plazas, sculpture parks, and museum atriums."
+        ],
+        callout: {
+          title: "Curatorial Highlight",
+          text: "Look for site-specific kinetic metal sculptures and organic woven installations that address global trade, climate resilience, and indigenous craftsmanship—a major unifying theme across the 2026 Meridians lineup."
+        }
+      },
+      {
+        sectionTitle: "Nova & Positions: The Vanguard of Emerging Voices",
+        paragraphs: [
+          "For collectors seeking early discoveries and energetic conceptual work, the perimeter sectors offer the most thrilling discoveries:",
+          "• Nova: Dedicated to galleries presenting works made strictly within the last three years by up to three artists. Expect daring, newly dry canvases, dynamic mixed-media collages, and video art addressing contemporary digital culture.",
+          "• Positions: The fair's premiere solo platform, where emerging galleries dedicate an entire booth to a single visionary artist. This format allows visitors to delve deep into one artist's creative universe rather than viewing a fragmented survey.",
+          "Keep an eye out for pioneering young galleries hailing from São Paulo, Lagos, Seoul, Berlin, and Mexico City, whose artists frequently transition into major international biennales following their Miami Beach debut."
+        ]
+      },
+      {
+        sectionTitle: "The Main Galleries: Blue-Chip Powerhouses & Modern Masterpieces",
+        paragraphs: [
+          "At the core of Halls A, B, C, and D lie the heavyweight international titans—such as Gagosian, Hauser & Wirth, David Zwirner, Pace, and White Cube. Here, museum-quality 20th-century modernism dialogues with the most sought-after contemporary painters of our era.",
+          "In addition to marquee secondary market canvases by masters like Willem de Kooning, Joan Mitchell, and Jean-Michel Basquiat, prominent booths feature solo spotlights on contemporary painters known for intense figurative narrative and sculptural ceramics."
+        ]
+      }
+    ],
+    keyTakeaway: "Begin your tour in the Meridians sector for an awe-inspiring look at monumental works before crowds peak, then navigate through Nova and Positions for cutting-edge discoveries, leaving the bustling central aisles for your afternoon walk.",
+    serviceNote: "Navigating Miami Art Week with an art advisory group, cultural delegation, or private patrons? ELMIA DMC coordinates dedicated executive chauffeur standby, airport tarmac greetings at Opa-locka (OPF), and seamless ground transit."
   }
 ];
 
